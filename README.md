@@ -91,6 +91,26 @@ npx prisma db seed
 
 Opcional: en Vercel puedes cambiar el build a `npx prisma migrate deploy && npm run build` para aplicar migraciones en cada deploy. El seed **no** debe correr en cada build (borraría datos).
 
+## Solución de problemas
+
+**Todas las páginas muestran "Application error: a server-side exception has occurred" (Vercel).**
+Casi siempre es la base de datos, no el código. Sigue estos pasos en orden:
+
+1. Abre `https://TU-APP.vercel.app/api/health`. Responde `{"ok": true}` si todo está bien; si no, muestra el error (sin credenciales), los **nombres** de las variables que faltan y una sugerencia.
+2. **Faltan variables**: en Vercel → Project → Settings → Environment Variables agrega `DATABASE_URL` y `DIRECT_URL` (Production y Preview) y haz **Redeploy**.
+3. **Faltan tablas** (la causa más común: nunca se corrieron las migraciones). Desde tu máquina, con un `.env` que apunte a la base de producción:
+
+```bash
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+4. **No conecta** (`P1001`): en Supabase usa el *Transaction pooler* (puerto 6543, host `*.pooler.supabase.com`) en `DATABASE_URL` con `?pgbouncer=true`. La conexión directa (`db.xxxx.supabase.co:5432`) suele fallar desde Vercel; úsala solo en `DIRECT_URL` para migraciones.
+5. **Contraseña incorrecta** (`P1000`): si tiene caracteres especiales (`@`, `#`, `/`), codifícala (URL-encode).
+6. **Prisma Client no generado**: el repo ya ejecuta `prisma generate` en `postinstall` y en `npm run build`. Si cambiaste el comando de build en Vercel, déjalo en `npm run build`.
+
+Para ver los logs en Vercel: Project → **Logs** (o Deployments → el despliegue → Functions/Runtime Logs) y busca el `Digest` que muestra el error.
+
 ## Scripts
 
 | Comando | Qué hace |
