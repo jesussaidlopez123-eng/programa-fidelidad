@@ -3,14 +3,10 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.payment.deleteMany();
-  await prisma.reward.deleteMany();
-  await prisma.credit.deleteMany();
-  await prisma.customer.deleteMany();
-  await prisma.appSettings.deleteMany();
-
-  await prisma.appSettings.create({
-    data: {
+  await prisma.appSettings.upsert({
+    where: { id: "default" },
+    update: {},
+    create: {
       id: "default",
       dueDayOfMonth: 15,
       graceDays: 3,
@@ -18,6 +14,12 @@ async function main() {
       rewardName: "Premio 5to Abono",
     },
   });
+
+  const existingCustomers = await prisma.customer.count();
+  if (existingCustomers > 0) {
+    console.log(`[seed] La base ya tiene ${existingCustomers} cliente(s); no se agrega nada.`);
+    return;
+  }
 
   const maria = await prisma.customer.create({
     data: {
