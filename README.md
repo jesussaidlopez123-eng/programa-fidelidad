@@ -30,6 +30,14 @@ Nunca subas `.env`. En Vercel las mismas variables se configuran en Project Sett
 
 ### Postgres local (desarrollo)
 
+Con Docker (recomendado):
+
+```bash
+docker compose up -d
+```
+
+O con Postgres instalado en el sistema:
+
 ```bash
 createdb fidelidad
 ```
