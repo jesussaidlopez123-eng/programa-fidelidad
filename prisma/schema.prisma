@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum CreditStatus {
+  ACTIVE
+  COMPLETED
+  DEFAULTED
+}
+
+enum RewardStatus {
+  PENDING
+  DELIVERED
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  fullName  String
+  phone     String?
+  email     String?
+  barcodeId String   @unique
+  createdAt DateTime @default(now())
+  credits   Credit[]
+  rewards   Reward[]
+
+  @@index([barcodeId])
+}
+
+model Credit {
+  id                String       @id @default(cuid())
+  customerId        String
+  customer          Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  concept           String
+  totalAmount       Float
+  balance           Float
+  installmentAmount Float
+  totalInstallments Int
+  paidInstallments  Int          @default(0)
+  currentStreak     Int          @default(0)
+  status            CreditStatus @default(ACTIVE)
+  createdAt         DateTime     @default(now())
+  payments          Payment[]
+  rewards           Reward[]
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model Reward {
+  id          String       @id @default(cuid())
+  customerId  String
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  creditId    String
+  credit      Credit       @relation(fields: [creditId], references: [id], onDelete: Cascade)
+  rewardName  String
+  status      RewardStatus @default(PENDING)
+  unlockedAt  DateTime     @default(now())
+  deliveredAt DateTime?
+
+  @@index([customerId])
+  @@index([creditId])
+  @@index([status])
+}
+
+model Payment {
+  id                      String   @id @default(cuid())
+  creditId                String
+  credit                  Credit   @relation(fields: [creditId], references: [id], onDelete: Cascade)
+  amount                  Float?
+  paymentDate             DateTime @default(now())
+  isOnTime                Boolean
+  streakCountAfterPayment Int
+  notes                   String?
+
+  @@index([creditId])
+  @@index([paymentDate])
+}
+
+model AppSettings {
+  id            String   @id @default("default")
+  dueDayOfMonth Int      @default(15)
+  graceDays     Int      @default(3)
+  rewardEvery   Int      @default(5)
+  rewardName    String   @default("Premio 5to Abono")
+  updatedAt     DateTime @updatedAt
+}

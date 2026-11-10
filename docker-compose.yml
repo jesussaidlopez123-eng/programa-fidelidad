@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: fidelidad-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fidelidad
+    ports:
+      - "5432:5432"
+    volumes:
+      - fidelidad_pg:/var/lib/postgresql/data
+
+volumes:
+  fidelidad_pg:

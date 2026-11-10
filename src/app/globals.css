@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream: #f6f1e7;
+  --ink: #1c1915;
+  --forest: #14332c;
+  --teal: #1f6f5b;
+  --gold: #d4a017;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(212, 160, 23, 0.12), transparent 50%),
+    radial-gradient(900px 400px at 110% 0%, rgba(31, 111, 91, 0.12), transparent 45%),
+    var(--cream);
+  color: var(--ink);
+}
+
+.loyalty-card {
+  width: 3.5in;
+  height: 2in;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(220px) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+.confetti {
+  animation: confetti-fall 1.4s ease-in infinite;
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .print-sheet {
+    margin: 0;
+    padding: 0;
+  }
+
+  .loyalty-card {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}
