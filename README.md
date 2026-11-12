@@ -1,6 +1,6 @@
 # Fidelidad — Control de asistencia de abonos
 
-Programa de fidelidad para una casa de crédito. Cada cliente con crédito activo recibe un código de barras (`CRD-000123`). Al registrar la **asistencia del abono** se marca puntual o tardío según el día de corte y los días de gracia. Cinco abonos puntuales desbloquean un premio.
+Programa de fidelidad para una casa de crédito. Cada cliente tiene una tarjeta con código de barras (el que se escanea al darlo de alta, por ejemplo `CRD-000123`). Al registrar la **asistencia del abono** se marca puntual o tardío según el día de corte y los días de gracia. Cinco abonos puntuales desbloquean un premio.
 
 Esta herramienta **no es una caja**: no cobra, no muestra totales recaudados ni actualiza un saldo en pantalla. Solo controla si el cliente cumplió su abono.
 
@@ -9,10 +9,10 @@ Rutas (todas requieren iniciar sesión):
 | Ruta | Quién entra | Qué hace |
 | --- | --- | --- |
 | `/login` | Todos | Inicio de sesión (usuario + contraseña) |
-| `/alta` | Sucursal y Administrador | Alta de cliente con crédito inicial y tarjeta imprimible (`/print/...`) |
+| `/alta` | Sucursal y Administrador | Alta de cliente: escanear tarjeta nueva y capturar datos (ver abajo) |
 | `/asistencia` | Sucursal y Administrador | **Recepción de abono** (lector USB + cámara) |
 | `/` | Administrador | Dashboard (asistencias de hoy, regalos pendientes, clientes en racha 4/5) |
-| `/customers` | Administrador | Directorio de clientes |
+| `/customers` | Administrador | Tabla de clientes con todos sus datos, búsqueda y eliminación con contraseña |
 | `/rewards` | Administrador | **Regalos** pendientes / entregados |
 | `/usuarios` | Administrador | Administrar usuarios |
 
@@ -35,6 +35,20 @@ La primera vez que se despliega (y en cada build) el seed crea los usuarios que 
 - Las contraseñas se guardan con `bcryptjs`. Si olvidas la contraseña de todos los administradores, edita la tabla `User` en Supabase o borra un administrador y haz Redeploy para que el seed lo recree con `0000`.
 
 En la demo, el cliente en racha 4 es **María Elena Vargas · `CRD-000123`**: el siguiente abono puntual desbloquea el premio (solo se crea si la base está vacía).
+
+## Alta de clientes
+
+1. **Escanear tarjeta nueva**: el campo grande tiene foco automático para el lector USB (escribe el código y envía Enter) y hay un botón para escanear con la cámara. El código escaneado, sea cual sea, se guarda como el código de barras del cliente. Debe ser único: si ya existe, se avisa el nombre del cliente dueño. Como respaldo hay un enlace pequeño "generar código automático" (`CRD-000123`).
+2. **Datos del cliente**: Nombre, Número (teléfono), Plataforma (`PAYJOY` / `KREDIYA`), Modelo, IMEI, TAG/CURP y Monto de abono. Todos son obligatorios. Si el IMEI no tiene 15 dígitos se avisa y se pide confirmar, pero no se bloquea.
+3. Al guardar se crea el cliente y su crédito (con el monto de abono, solo como registro; no hay caja ni cobro) y la pantalla vuelve al escáner para el siguiente cliente, con un botón para imprimir la tarjeta del que se acaba de dar de alta.
+
+Las altas nuevas no tienen número fijo de abonos: el crédito queda abierto (`totalInstallments = 0`) y en **Recepción de abono** se sigue contando racha, abonos y regalos como siempre. Los clientes anteriores conservan sus datos; los campos nuevos aparecen como "—".
+
+## Clientes (administrador)
+
+Tabla con código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, abonos/racha y la sucursal que dio de alta al cliente. El buscador filtra por cualquiera de esos campos.
+
+**Eliminar cliente**: pide la contraseña del administrador en sesión (se verifica en el servidor con bcrypt; con una contraseña incorrecta no se borra nada). El diálogo indica cuántos créditos, abonos y regalos se eliminarán junto con el cliente; es permanente.
 
 ## Stack
 

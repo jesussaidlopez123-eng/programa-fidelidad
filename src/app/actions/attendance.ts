@@ -133,7 +133,8 @@ export async function registerAttendance(input: {
       if (credit.status !== "ACTIVE") {
         throw new Error("Este crédito ya no está activo.");
       }
-      if (credit.paidInstallments >= credit.totalInstallments) {
+      // totalInstallments = 0 significa crédito sin límite de abonos (altas nuevas).
+      if (credit.totalInstallments > 0 && credit.paidInstallments >= credit.totalInstallments) {
         throw new Error("Este crédito ya cubrió todos sus abonos.");
       }
 
@@ -169,7 +170,8 @@ export async function registerAttendance(input: {
       }
 
       const paidInstallments = credit.paidInstallments + 1;
-      const creditCompleted = paidInstallments >= credit.totalInstallments;
+      const creditCompleted =
+        credit.totalInstallments > 0 && paidInstallments >= credit.totalInstallments;
 
       await tx.payment.create({
         data: {

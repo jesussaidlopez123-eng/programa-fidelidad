@@ -149,12 +149,16 @@ export function AttendanceStation() {
               <div className="rounded-2xl bg-cream px-4 py-3">
                 <p className="text-sm text-ink/60">{credit.concept}</p>
                 <p className="mt-1 text-lg font-semibold">
-                  Abono {Math.min(credit.paidInstallments + 1, credit.totalInstallments)} de{" "}
-                  {credit.totalInstallments}
+                  {credit.totalInstallments > 0
+                    ? `Abono ${Math.min(credit.paidInstallments + 1, credit.totalInstallments)} de ${credit.totalInstallments}`
+                    : `Abono ${credit.paidInstallments + 1}`}
                 </p>
                 <p className="text-sm text-ink/55">
-                  Asistencias registradas: {credit.paidInstallments}/{credit.totalInstallments} ·{" "}
-                  {lookup.punctuality.label}
+                  Asistencias registradas:{" "}
+                  {credit.totalInstallments > 0
+                    ? `${credit.paidInstallments}/${credit.totalInstallments}`
+                    : credit.paidInstallments}{" "}
+                  · {lookup.punctuality.label}
                 </p>
               </div>
 

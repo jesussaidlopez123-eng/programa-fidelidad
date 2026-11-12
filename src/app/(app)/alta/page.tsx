@@ -12,8 +12,8 @@ export default async function AltaPage() {
         <p className="text-xs uppercase tracking-[0.25em] text-teal">Sucursal</p>
         <h1 className="font-display text-4xl">Alta de clientes</h1>
         <p className="mt-2 text-ink/65">
-          Alta de cliente con crédito inicial. Se genera un código único tipo CRD-000123 y una
-          tarjeta imprimible.
+          Escanea la tarjeta nueva y captura los datos del cliente. El código escaneado queda como
+          su código de barras para registrar abonos.
         </p>
       </header>
       <CustomerForm />

@@ -20,6 +20,11 @@ enum RewardStatus {
   DELIVERED
 }
 
+enum Platform {
+  PAYJOY
+  KREDIYA
+}
+
 enum UserRole {
   SUCURSAL
   ADMIN
@@ -50,7 +55,13 @@ model Customer {
   createdBy     User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdByName String?
 
+  platform Platform?
+  model    String?
+  imei     String?
+  tagCurp  String?
+
   @@index([barcodeId])
+  @@index([imei])
 }
 
 model Credit {
