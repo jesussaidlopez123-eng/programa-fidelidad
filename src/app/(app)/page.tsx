@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import Link from "next/link";
 import { Gift, ScanLine, Stamp, Users } from "lucide-react";
 import { getDashboardData } from "@/app/actions/dashboard";
@@ -8,6 +9,7 @@ import { formatDate } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  await requireUser(["ADMIN"]);
   const data = await getDashboardData();
 
   return (
@@ -81,7 +83,10 @@ export default async function DashboardPage() {
                 <li key={payment.id} className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium">{payment.credit.customer.fullName}</p>
-                    <p className="text-xs text-ink/55">{payment.notes}</p>
+                    <p className="text-xs text-ink/55">
+                      {payment.notes}
+                      {payment.receivedByName ? ` · Recibió: ${payment.receivedByName}` : ""}
+                    </p>
                   </div>
                   <div className="text-right text-xs text-ink/50">
                     <p>{formatDate(payment.paymentDate)}</p>

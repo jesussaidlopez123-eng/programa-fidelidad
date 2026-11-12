@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/session";
 import { normalizeBarcode } from "@/lib/utils";
 
 export async function listCustomers() {
+  await requireUser(["ADMIN"]);
   return prisma.customer.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -19,6 +21,7 @@ export async function listCustomers() {
 }
 
 export async function getCustomer(id: string) {
+  await requireUser();
   return prisma.customer.findUnique({
     where: { id },
     include: {
@@ -29,6 +32,7 @@ export async function getCustomer(id: string) {
 }
 
 export async function createCustomerWithCredit(formData: FormData) {
+  const user = await requireUser();
   const fullName = String(formData.get("fullName") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim() || null;
   const email = String(formData.get("email") ?? "").trim() || null;
@@ -58,6 +62,8 @@ export async function createCustomerWithCredit(formData: FormData) {
       phone,
       email,
       barcodeId,
+      createdById: user.id,
+      createdByName: user.name,
       credits: {
         create: {
           concept,

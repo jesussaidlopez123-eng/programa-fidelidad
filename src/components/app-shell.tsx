@@ -2,18 +2,38 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Gift, LayoutDashboard, Menu, ScanLine, Users, X } from "lucide-react";
+import {
+  Gift,
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  ScanLine,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
 import { useState } from "react";
+import { logout } from "@/app/actions/auth";
+import { ROLE_LABEL, type Role } from "@/lib/auth/config";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/asistencia", label: "Asistencia", icon: ScanLine },
-  { href: "/customers", label: "Clientes", icon: Users },
-  { href: "/rewards", label: "Premios", icon: Gift },
+const NAV: { href: string; label: string; icon: typeof Users; roles: Role[] }[] = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN"] },
+  { href: "/alta", label: "Alta", icon: UserPlus, roles: ["SUCURSAL", "ADMIN"] },
+  { href: "/asistencia", label: "Recepción de abono", icon: ScanLine, roles: ["SUCURSAL", "ADMIN"] },
+  { href: "/customers", label: "Clientes", icon: Users, roles: ["ADMIN"] },
+  { href: "/rewards", label: "Regalos", icon: Gift, roles: ["ADMIN"] },
+  { href: "/usuarios", label: "Usuarios", icon: KeyRound, roles: ["ADMIN"] },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: { name: string; role: Role };
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -37,7 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         <nav className="space-y-1.5">
-          {NAV.map((item) => {
+          {NAV.filter((item) => item.roles.includes(user.role)).map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -58,9 +78,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <p className="mt-10 px-3 text-xs leading-relaxed text-cream/45">
-          Escanea el código, registra la asistencia del abono y acumula sellos de puntualidad.
-        </p>
+        <div className="mt-10 space-y-3 rounded-2xl bg-white/5 p-3">
+          <div>
+            <p className="truncate text-sm font-semibold text-cream">{user.name}</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-cream/50">
+              {ROLE_LABEL[user.role]}
+            </p>
+          </div>
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-medium text-cream/85 transition hover:bg-white/10"
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </button>
+          </form>
+        </div>
       </aside>
 
       {open ? (

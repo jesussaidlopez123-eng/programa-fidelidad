@@ -2,22 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/session";
+import { loadSettings } from "@/lib/settings";
 
 export async function getSettings() {
-  return prisma.appSettings.upsert({
-    where: { id: "default" },
-    update: {},
-    create: {
-      id: "default",
-      dueDayOfMonth: 15,
-      graceDays: 3,
-      rewardEvery: 5,
-      rewardName: "Premio 5to Abono",
-    },
-  });
+  await requireUser();
+  return loadSettings();
 }
 
 export async function updateSettings(formData: FormData) {
+  await requireUser(["ADMIN"]);
   const dueDayOfMonth = clampInt(formData.get("dueDayOfMonth"), 1, 31, 15);
   const graceDays = clampInt(formData.get("graceDays"), 0, 30, 3);
   const rewardName =

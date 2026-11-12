@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 
-// El seed es opcional: si falla, el build continúa.
+// Crea los usuarios iniciales que falten y, si no hay clientes, los datos de demostración.
+// Si falla, el build continúa.
 const result = spawnSync("npx", ["tsx", "prisma/seed.ts"], {
   stdio: "inherit",
   env: process.env,
@@ -9,8 +10,8 @@ const result = spawnSync("npx", ["tsx", "prisma/seed.ts"], {
 
 if (result.status !== 0) {
   console.warn(
-    "[seed] No se pudo cargar los datos de demostración (se ignora, el build continúa). " +
-      "La app funciona sin ellos; puedes crear clientes desde /customers.",
+    "[seed] No se pudo ejecutar el seed (usuarios iniciales / datos de demostración) (se ignora, el build continúa). " +
+      "Vuelve a hacer Redeploy cuando la base responda para crear los usuarios iniciales.",
   );
 }
 process.exit(0);

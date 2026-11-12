@@ -22,6 +22,7 @@ type Customer = {
   fullName: string;
   phone: string | null;
   barcodeId: string;
+  createdByName?: string | null;
   credits: Credit[];
   rewards: { id: string }[];
 };
@@ -47,6 +48,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
               </div>
               <p className="mt-1 text-sm text-ink/60">
                 {customer.phone ?? "Sin teléfono"}
+                {customer.createdByName ? ` · Alta: ${customer.createdByName}` : ""}
                 {credit ? ` · ${credit.concept}` : ""}
                 {credit
                   ? ` · ${credit.paidInstallments}/${credit.totalInstallments} abonos · ${formatMoney(credit.totalAmount)}`

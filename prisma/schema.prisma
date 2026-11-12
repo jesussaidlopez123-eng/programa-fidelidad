@@ -20,6 +20,22 @@ enum RewardStatus {
   DELIVERED
 }
 
+enum UserRole {
+  SUCURSAL
+  ADMIN
+}
+
+model User {
+  id               String     @id @default(cuid())
+  name             String     @unique
+  passwordHash     String
+  role             UserRole   @default(SUCURSAL)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  customersCreated Customer[]
+  paymentsReceived Payment[]
+}
+
 model Customer {
   id        String   @id @default(cuid())
   fullName  String
@@ -29,6 +45,10 @@ model Customer {
   createdAt DateTime @default(now())
   credits   Credit[]
   rewards   Reward[]
+
+  createdById   String?
+  createdBy     User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdByName String?
 
   @@index([barcodeId])
 }
@@ -78,6 +98,10 @@ model Payment {
   isOnTime                Boolean
   streakCountAfterPayment Int
   notes                   String?
+
+  receivedById   String?
+  receivedBy     User?   @relation(fields: [receivedById], references: [id], onDelete: SetNull)
+  receivedByName String?
 
   @@index([creditId])
   @@index([paymentDate])

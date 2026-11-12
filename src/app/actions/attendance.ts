@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { normalizeBarcode } from "@/lib/utils";
 import { evaluatePunctuality, punctualityLabel } from "@/lib/punctuality";
-import { getSettings } from "@/app/actions/settings";
+import { requireUser } from "@/lib/auth/session";
+import { loadSettings } from "@/lib/settings";
 
 export type LateDecision = "KEEP" | "RESET";
 
@@ -48,6 +49,7 @@ export type AttendanceResult = {
 export async function lookupByBarcode(rawBarcode: string): Promise<
   { ok: true; data: AttendanceLookup } | { ok: false; error: string }
 > {
+  await requireUser();
   const barcodeId = normalizeBarcode(rawBarcode);
   if (!barcodeId) {
     return { ok: false, error: "Escribe o escanea un código de barras." };
@@ -69,7 +71,7 @@ export async function lookupByBarcode(rawBarcode: string): Promise<
   const credit =
     customer.credits.find((item) => item.status === "ACTIVE") ?? customer.credits[0] ?? null;
 
-  const settings = await getSettings();
+  const settings = await loadSettings();
   const punctuality = evaluatePunctuality(new Date(), settings);
 
   return {
@@ -106,7 +108,8 @@ export async function registerAttendance(input: {
   creditId: string;
   lateDecision?: LateDecision;
 }): Promise<{ ok: true; data: AttendanceResult } | { ok: false; error: string; needsLateDecision?: boolean }> {
-  const settings = await getSettings();
+  const user = await requireUser();
+  const settings = await loadSettings();
   const punctuality = evaluatePunctuality(new Date(), settings);
 
   if (!punctuality.isOnTime && !input.lateDecision) {
@@ -175,6 +178,8 @@ export async function registerAttendance(input: {
           isOnTime: punctuality.isOnTime,
           streakCountAfterPayment: streak,
           notes,
+          receivedById: user.id,
+          receivedByName: user.name,
         },
       });
 
@@ -216,6 +221,7 @@ export async function registerAttendance(input: {
 }
 
 export async function markRewardDelivered(rewardId: string) {
+  await requireUser(["ADMIN"]);
   await prisma.reward.update({
     where: { id: rewardId },
     data: {

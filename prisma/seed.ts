@@ -1,8 +1,40 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type UserRole } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+const INITIAL_PASSWORD = "0000";
+const INITIAL_USERS: { name: string; role: UserRole }[] = [
+  { name: "HUATABAMPO", role: "SUCURSAL" },
+  { name: "HUATABAMPO 2", role: "SUCURSAL" },
+  { name: "ALLENDE", role: "SUCURSAL" },
+  { name: "MERCADO", role: "SUCURSAL" },
+  { name: "MERCADO 2", role: "SUCURSAL" },
+  { name: "ALAMOS", role: "SUCURSAL" },
+  { name: "ADMINISTRADOR", role: "ADMIN" },
+  { name: "ADMINISTRADOR 2", role: "ADMIN" },
+];
+
+// Crea los usuarios iniciales que falten (por nombre). Nunca toca contraseñas ni usuarios existentes.
+async function ensureUsers() {
+  const passwordHash = await bcrypt.hash(INITIAL_PASSWORD, 10);
+  let created = 0;
+  for (const user of INITIAL_USERS) {
+    const exists = await prisma.user.findUnique({ where: { name: user.name } });
+    if (exists) continue;
+    await prisma.user.create({ data: { ...user, passwordHash } });
+    created += 1;
+  }
+  console.log(
+    created > 0
+      ? `[seed] Usuarios creados: ${created} (contraseña temporal ${INITIAL_PASSWORD}).`
+      : "[seed] Los usuarios iniciales ya existen.",
+  );
+}
+
 async function main() {
+  await ensureUsers();
+
   await prisma.appSettings.upsert({
     where: { id: "default" },
     update: {},

@@ -1,8 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/session";
 
 export async function getDashboardData() {
+  await requireUser(["ADMIN"]);
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date();

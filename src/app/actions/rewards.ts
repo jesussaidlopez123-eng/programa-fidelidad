@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { RewardStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth/session";
 
 export async function listRewards(status?: RewardStatus) {
+  await requireUser(["ADMIN"]);
   return prisma.reward.findMany({
     where: status ? { status } : undefined,
     orderBy: { unlockedAt: "desc" },
@@ -16,6 +18,7 @@ export async function listRewards(status?: RewardStatus) {
 }
 
 export async function deliverReward(rewardId: string) {
+  await requireUser(["ADMIN"]);
   await prisma.reward.update({
     where: { id: rewardId },
     data: {

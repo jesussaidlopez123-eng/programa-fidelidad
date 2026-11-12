@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/session";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCustomer } from "@/app/actions/customers";
@@ -11,6 +12,7 @@ export default async function PrintCardPage({
 }: {
   params: { customerId: string };
 }) {
+  const user = await requireUser();
   const customer = await getCustomer(params.customerId);
   if (!customer) notFound();
   const credit = customer.credits.find((item) => item.status === "ACTIVE") ?? customer.credits[0];
@@ -24,7 +26,7 @@ export default async function PrintCardPage({
         </div>
         <div className="flex gap-2">
           <Link
-            href="/customers"
+            href={user.role === "ADMIN" ? "/customers" : "/alta"}
             className="rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold"
           >
             Volver

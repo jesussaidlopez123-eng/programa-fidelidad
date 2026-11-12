@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { createCustomerWithCredit } from "@/app/actions/customers";
@@ -11,9 +12,24 @@ import { Label } from "@/components/ui/label";
 export function CustomerForm() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [created, setCreated] = useState<{ customerId: string; barcodeId: string } | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   return (
+    <div className="space-y-4">
+      {created ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-teal/30 bg-teal/10 p-5">
+          <div>
+            <p className="font-semibold text-forest">Cliente dado de alta</p>
+            <p className="font-mono text-sm text-teal">{created.barcodeId}</p>
+          </div>
+          <Button asChild>
+            <Link href={`/print/${created.customerId}`}>Imprimir tarjeta</Link>
+          </Button>
+        </div>
+      ) : null}
     <form
+      ref={formRef}
       className="grid gap-4 rounded-3xl border border-line bg-white p-5 shadow-sm md:grid-cols-2"
       action={async (formData) => {
         setPending(true);
@@ -24,6 +40,8 @@ export function CustomerForm() {
           return;
         }
         toast.success(`Cliente dado de alta · ${result.barcodeId}`);
+        setCreated({ customerId: result.customerId, barcodeId: result.barcodeId });
+        formRef.current?.reset();
         router.refresh();
       }}
     >
@@ -47,6 +65,7 @@ export function CustomerForm() {
         </Button>
       </div>
     </form>
+    </div>
   );
 }
 

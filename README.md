@@ -4,14 +4,37 @@ Programa de fidelidad para una casa de crédito. Cada cliente con crédito activ
 
 Esta herramienta **no es una caja**: no cobra, no muestra totales recaudados ni actualiza un saldo en pantalla. Solo controla si el cliente cumplió su abono.
 
-Rutas:
+Rutas (todas requieren iniciar sesión):
 
-- `/` Dashboard (asistencias de hoy, premios pendientes, clientes en racha 4/5)
-- `/asistencia` Control de asistencia (lector USB + cámara)
-- `/customers` Alta de clientes y tarjeta imprimible
-- `/rewards` Premios pendientes / entregados
+| Ruta | Quién entra | Qué hace |
+| --- | --- | --- |
+| `/login` | Todos | Inicio de sesión (usuario + contraseña) |
+| `/alta` | Sucursal y Administrador | Alta de cliente con crédito inicial y tarjeta imprimible (`/print/...`) |
+| `/asistencia` | Sucursal y Administrador | **Recepción de abono** (lector USB + cámara) |
+| `/` | Administrador | Dashboard (asistencias de hoy, regalos pendientes, clientes en racha 4/5) |
+| `/customers` | Administrador | Directorio de clientes |
+| `/rewards` | Administrador | **Regalos** pendientes / entregados |
+| `/usuarios` | Administrador | Administrar usuarios |
 
-Sin autenticación (uso interno). En la demo, el cliente en racha 4 es **María Elena Vargas · `CRD-000123`**: el siguiente abono puntual desbloquea el premio.
+## Usuarios y acceso
+
+La primera vez que se despliega (y en cada build) el seed crea los usuarios que falten, **sin tocar contraseñas ni usuarios existentes** y sin importar si ya hay clientes:
+
+| Usuario | Rol |
+| --- | --- |
+| `HUATABAMPO`, `HUATABAMPO 2`, `ALLENDE`, `MERCADO`, `MERCADO 2`, `ALAMOS` | Sucursal |
+| `ADMINISTRADOR`, `ADMINISTRADOR 2` | Administrador |
+
+**Contraseña temporal de todos: `0000`.** Entra como administrador y cámbiala en **Usuarios → Cambiar contraseña** para cada usuario.
+
+- **Sucursal** solo ve **Alta** y **Recepción de abono**. **Administrador** ve además Dashboard, Clientes, Regalos y Usuarios.
+- El nombre de usuario no distingue mayúsculas de minúsculas (se guarda en mayúsculas) y debe ser único.
+- En **Usuarios** el administrador puede agregar, renombrar, cambiar contraseña y eliminar usuarios. No se puede eliminar al propio usuario ni al último administrador.
+- Cada cliente guarda qué sucursal lo dio de alta y cada abono qué sucursal lo recibió (se ve en Clientes y en el Dashboard).
+- La sesión es una cookie firmada `httpOnly` que dura 12 horas. **No necesitas variables nuevas**: la firma se deriva de `DATABASE_URL`/`DIRECT_URL`. Opcionalmente define `AUTH_SECRET` (mínimo 16 caracteres) en Vercel para usar tu propio secreto; cambiarlo (o cambiar las URLs de la base) cierra todas las sesiones.
+- Las contraseñas se guardan con `bcryptjs`. Si olvidas la contraseña de todos los administradores, edita la tabla `User` en Supabase o borra un administrador y haz Redeploy para que el seed lo recree con `0000`.
+
+En la demo, el cliente en racha 4 es **María Elena Vargas · `CRD-000123`**: el siguiente abono puntual desbloquea el premio (solo se crea si la base está vacía).
 
 ## Stack
 
