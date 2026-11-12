@@ -82,22 +82,96 @@ test.describe("Regalos, asistencia, evidencias y foto", () => {
   });
 
   test.afterAll(async () => {
-    await prisma.customer.deleteMany({ where: { barcodeId: "CRD-E2E001" } });
+    await prisma.customer.deleteMany({ where: { barcodeId: { in: ["CRD-E2E001", "CRD-E2EMOD"] } } });
     await prisma.$disconnect();
   });
 
-  test("admin configura regalos y ve el módulo", async ({ page }) => {
+  test("admin guarda los 3 regalos y persisten tras recargar (incl. desactivar)", async ({
+    page,
+  }) => {
     await login(page, "ADMINISTRADOR");
     await page.goto("/rewards");
     await expect(page.getByRole("heading", { name: "Regalos", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Configuración de regalos" })).toBeVisible();
-    await expect(page.getByLabel("Nombre").first()).toBeVisible();
 
-    await page.getByLabel("Nombre").first().fill("Regalo 1 E2E");
+    await page.locator("#gift-name-1").fill("Audífonos E2E");
+    await page.locator("#gift-name-2").fill("Bocina E2E");
+    await page.locator("#gift-name-3").fill("Tablet E2E");
+    await page.locator("#gift-desc-1").fill("Inalámbricos");
+    await page.locator("#gift-marks-1").fill("5");
+    await page.locator("#gift-marks-2").fill("10");
+    await page.locator("#gift-marks-3").fill("15");
+
     await page.getByRole("button", { name: /guardar regalos/i }).click();
     await expect(page.getByText("Configuración de regalos guardada")).toBeVisible({
       timeout: 10_000,
     });
+
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator("#gift-name-1")).toHaveValue("Audífonos E2E");
+    await expect(page.locator("#gift-name-2")).toHaveValue("Bocina E2E");
+    await expect(page.locator("#gift-name-3")).toHaveValue("Tablet E2E");
+    await expect(page.locator("#gift-marks-1")).toHaveValue("5");
+    await expect(page.locator("#gift-marks-2")).toHaveValue("10");
+    await expect(page.locator("#gift-marks-3")).toHaveValue("15");
+
+    // Desactivar Regalo 3 (vacío) debe persistir vacío — no volver a 15.
+    await page.locator("#gift-marks-3").fill("");
+    await page.getByRole("button", { name: /guardar regalos/i }).click();
+    await expect(page.getByText("Configuración de regalos guardada")).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator("#gift-marks-3")).toHaveValue("");
+    await expect(page.locator("#gift-name-3")).toHaveValue("Tablet E2E");
+
+    const tier3 = await prisma.giftTier.findUnique({ where: { slot: 3 } });
+    expect(tier3?.marksRequired).toBeNull();
+
+    // Restaurar para el resto de la suite.
+    await page.locator("#gift-marks-3").fill("15");
+    await page.locator("#gift-name-1").fill("Regalo 1");
+    await page.locator("#gift-name-2").fill("Regalo 2");
+    await page.locator("#gift-name-3").fill("Regalo 3");
+    await page.locator("#gift-desc-1").fill("Premio prueba");
+    await page.getByRole("button", { name: /guardar regalos/i }).click();
+    await expect(page.getByText("Configuración de regalos guardada")).toBeVisible({
+      timeout: 10_000,
+    });
+  });
+
+  test("alta de cliente persiste el campo Modelo", async ({ page }) => {
+    await login(page, "HUATABAMPO");
+    await page.goto("/alta");
+    await page.getByRole("button", { name: /generar código automático/i }).click();
+    await page.getByLabel(/^Nombre$/i).waitFor();
+
+    const stamp = Date.now().toString().slice(-6);
+    const model = `Modelo-E2E-${stamp}`;
+    await page.getByLabel(/^Nombre$/i).fill(`Cliente Modelo ${stamp}`);
+    await page.getByLabel(/^Número$/i).fill("5559876543");
+    await page.locator("#platform").selectOption("KREDIYA");
+    await page.getByLabel(/^Modelo$/i).fill(model);
+    await page.getByLabel(/^IMEI$/i).fill("352222222222222");
+    await page.getByLabel(/TAG\/CURP/i).fill(`MODE2E${stamp}`);
+    await page.getByLabel(/Monto de abono/i).fill("350");
+    await page.getByRole("button", { name: /guardar cliente/i }).click();
+    await expect(page.getByText(`Cliente guardado: Cliente Modelo ${stamp}`)).toBeVisible({
+      timeout: 10_000,
+    });
+
+    const saved = await prisma.customer.findFirst({
+      where: { fullName: `Cliente Modelo ${stamp}` },
+      select: { id: true, model: true, barcodeId: true },
+    });
+    expect(saved?.model).toBe(model);
+
+    await logout(page);
+    await login(page, "ADMINISTRADOR");
+    await page.goto(`/customers/${saved!.id}`, { waitUntil: "networkidle" });
+    await expect(page.getByText(model, { exact: true })).toBeVisible();
+
+    await prisma.customer.delete({ where: { id: saved!.id } }).catch(() => undefined);
   });
 
   test("abono puntual desbloquea regalo, evidencias y foto en ficha", async ({ page }) => {

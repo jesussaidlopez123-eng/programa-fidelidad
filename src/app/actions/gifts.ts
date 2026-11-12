@@ -20,22 +20,26 @@ export async function listGiftTiers() {
 
 export async function saveGiftTiers(tiers: GiftTierInput[]) {
   await requireUser(["ADMIN"]);
-  await ensureGiftTiers();
 
-  if (tiers.length !== 3 || ![1, 2, 3].every((slot) => tiers.some((t) => t.slot === slot))) {
+  if (tiers.length !== 3 || ![1, 2, 3].every((slot) => tiers.some((t) => Number(t.slot) === slot))) {
     return { ok: false as const, error: "Debes configurar exactamente Regalo 1, 2 y 3." };
+  }
+
+  try {
+    await ensureGiftTiers();
+  } catch (error) {
+    return missingGiftTierResult(error);
   }
 
   const normalized = tiers
     .map((tier) => {
-      const name = tier.name.trim() || `Regalo ${tier.slot}`;
-      const description = tier.description.trim();
-      const marks =
-        tier.marksRequired == null || Number.isNaN(tier.marksRequired)
-          ? null
-          : Math.trunc(tier.marksRequired);
+      const slot = Number(tier.slot);
+      const name = String(tier.name ?? "").trim() || `Regalo ${slot}`;
+      const description = String(tier.description ?? "").trim();
+      const rawMarks = tier.marksRequired == null ? null : Number(tier.marksRequired);
+      const marks = rawMarks == null || Number.isNaN(rawMarks) ? null : Math.trunc(rawMarks);
       return {
-        slot: tier.slot,
+        slot,
         name,
         description,
         marksRequired: marks != null && marks > 0 ? marks : null,
@@ -64,9 +68,10 @@ export async function saveGiftTiers(tiers: GiftTierInput[]) {
     return { ok: false as const, error: "Cada regalo activo debe tener un número de marcas distinto." };
   }
 
-  await prisma.$transaction(
-    normalized.map((tier) =>
-      prisma.giftTier.upsert({
+  try {
+    // Upserts secuenciales (sin $transaction) para ir bien con el pooler de Supabase/pgbouncer.
+    for (const tier of normalized) {
+      await prisma.giftTier.upsert({
         where: { slot: tier.slot },
         update: {
           name: tier.name,
@@ -80,9 +85,11 @@ export async function saveGiftTiers(tiers: GiftTierInput[]) {
           description: tier.description,
           marksRequired: tier.marksRequired,
         },
-      }),
-    ),
-  );
+      });
+    }
+  } catch (error) {
+    return missingGiftTierResult(error);
+  }
 
   // Mantener AppSettings alineado con el primer regalo activo (compatibilidad / dashboard legacy).
   const first = active[0];
@@ -100,11 +107,35 @@ export async function saveGiftTiers(tiers: GiftTierInput[]) {
     });
   }
 
+  const saved = await prisma.giftTier.findMany({
+    orderBy: { slot: "asc" },
+    select: { slot: true, name: true, description: true, marksRequired: true },
+  });
+
   revalidatePath("/rewards");
   revalidatePath("/asistencia");
   revalidatePath("/");
   revalidatePath("/evidencias");
-  return { ok: true as const };
+  return { ok: true as const, tiers: saved };
+}
+
+function missingGiftTierResult(error: unknown) {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code?: string }).code)
+      : "";
+  if (code === "P2021") {
+    return {
+      ok: false as const,
+      error:
+        "Falta la tabla GiftTier en la base. En Vercel haz Redeploy para aplicar la migración de regalos (o ejecuta `npx prisma migrate deploy`).",
+    };
+  }
+  console.error("[saveGiftTiers]", error);
+  return {
+    ok: false as const,
+    error: "No se pudo guardar la configuración de regalos. Intenta de nuevo.",
+  };
 }
 
 export async function listPendingPhotoRewards() {

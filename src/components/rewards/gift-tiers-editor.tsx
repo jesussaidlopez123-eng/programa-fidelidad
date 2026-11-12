@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { saveGiftTiers } from "@/app/actions/gifts";
@@ -15,20 +15,45 @@ type Tier = {
   marksRequired: number | null;
 };
 
-export function GiftTiersEditor({ initial }: { initial: Tier[] }) {
-  const router = useRouter();
-  const [rows, setRows] = useState<Tier[]>(
-    [1, 2, 3].map((slot) => {
-      const found = initial.find((tier) => tier.slot === slot);
+/** Normaliza los 3 slots. Si el tier existe, respeta marksRequired=null (desactivado). */
+function normalizeTiers(initial: Tier[]): Tier[] {
+  return [1, 2, 3].map((slot) => {
+    const found = initial.find((tier) => tier.slot === slot);
+    if (found) {
       return {
         slot,
-        name: found?.name ?? `Regalo ${slot}`,
-        description: found?.description ?? "",
-        marksRequired: found?.marksRequired ?? (slot === 1 ? 5 : slot === 2 ? 10 : 15),
+        name: found.name,
+        description: found.description ?? "",
+        // Importante: no usar `??` aquí. `null` significa desactivado y debe mostrarse vacío.
+        marksRequired: found.marksRequired,
       };
-    }),
-  );
+    }
+    return {
+      slot,
+      name: `Regalo ${slot}`,
+      description: "",
+      marksRequired: slot === 1 ? 5 : slot === 2 ? 10 : 15,
+    };
+  });
+}
+
+function tiersSignature(tiers: Tier[]) {
+  return tiers
+    .map((tier) => `${tier.slot}:${tier.name}:${tier.description}:${tier.marksRequired ?? ""}`)
+    .join("|");
+}
+
+export function GiftTiersEditor({ initial }: { initial: Tier[] }) {
+  const router = useRouter();
+  const [rows, setRows] = useState<Tier[]>(() => normalizeTiers(initial));
   const [busy, setBusy] = useState(false);
+  const initialSignature = tiersSignature(normalizeTiers(initial));
+
+  // Tras router.refresh(), sincronizar el estado con lo que vino de la base
+  // (antes un `??` en el estado inicial hacía que null se viera otra vez como 5/10/15).
+  useEffect(() => {
+    setRows(normalizeTiers(initial));
+  }, [initialSignature]); // eslint-disable-line react-hooks/exhaustive-deps -- signature captura el contenido
 
   function update(slot: number, patch: Partial<Tier>) {
     setRows((prev) => prev.map((row) => (row.slot === slot ? { ...row, ...patch } : row)));
@@ -55,9 +80,12 @@ export function GiftTiersEditor({ initial }: { initial: Tier[] }) {
             toast.error(result.error);
             return;
           }
+          setRows(normalizeTiers(result.tiers));
           toast.success("Configuración de regalos guardada");
           router.refresh();
-        } catch {
+        } catch (error) {
+          // No tragar redirects de Next (p. ej. sesión expirada → /login).
+          if (error && typeof error === "object" && "digest" in error) throw error;
           toast.error("No se pudo guardar. Intenta de nuevo.");
         } finally {
           setBusy(false);
