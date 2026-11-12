@@ -6,6 +6,7 @@ import { normalizeBarcode } from "@/lib/utils";
 import { evaluatePunctuality, punctualityLabel } from "@/lib/punctuality";
 import { requireUser } from "@/lib/auth/session";
 import { loadSettings } from "@/lib/settings";
+import { startOfBusinessDay } from "@/lib/business-time";
 
 export type LateDecision = "KEEP" | "RESET";
 
@@ -16,15 +17,22 @@ export type AttendanceLookup = {
     phone: string | null;
     email: string | null;
     barcodeId: string;
+    platform: "PAYJOY" | "KREDIYA" | null;
+    model: string | null;
+    imei: string | null;
+    tagCurp: string | null;
   };
   credit: {
     id: string;
     concept: string;
+    installmentAmount: number;
     totalInstallments: number;
     paidInstallments: number;
     currentStreak: number;
     status: "ACTIVE" | "COMPLETED" | "DEFAULTED";
   } | null;
+  lastPayment: { at: string; byName: string | null; isOnTime: boolean } | null;
+  paidToday: boolean;
   punctuality: {
     isOnTime: boolean;
     label: string;
@@ -74,6 +82,14 @@ export async function lookupByBarcode(rawBarcode: string): Promise<
   const settings = await loadSettings();
   const punctuality = evaluatePunctuality(new Date(), settings);
 
+  const last = credit
+    ? await prisma.payment.findFirst({
+        where: { creditId: credit.id },
+        orderBy: { paymentDate: "desc" },
+        select: { paymentDate: true, receivedByName: true, isOnTime: true },
+      })
+    : null;
+
   return {
     ok: true,
     data: {
@@ -83,17 +99,26 @@ export async function lookupByBarcode(rawBarcode: string): Promise<
         phone: customer.phone,
         email: customer.email,
         barcodeId: customer.barcodeId,
+        platform: customer.platform,
+        model: customer.model,
+        imei: customer.imei,
+        tagCurp: customer.tagCurp,
       },
       credit: credit
         ? {
             id: credit.id,
             concept: credit.concept,
+            installmentAmount: credit.installmentAmount,
             totalInstallments: credit.totalInstallments,
             paidInstallments: credit.paidInstallments,
             currentStreak: credit.currentStreak,
             status: credit.status,
           }
         : null,
+      lastPayment: last
+        ? { at: last.paymentDate.toISOString(), byName: last.receivedByName, isOnTime: last.isOnTime }
+        : null,
+      paidToday: !!last && last.paymentDate >= startOfBusinessDay(),
       punctuality: {
         isOnTime: punctuality.isOnTime,
         label: punctualityLabel(punctuality),
@@ -107,7 +132,11 @@ export async function lookupByBarcode(rawBarcode: string): Promise<
 export async function registerAttendance(input: {
   creditId: string;
   lateDecision?: LateDecision;
-}): Promise<{ ok: true; data: AttendanceResult } | { ok: false; error: string; needsLateDecision?: boolean }> {
+  allowDuplicateToday?: boolean;
+}): Promise<
+  | { ok: true; data: AttendanceResult }
+  | { ok: false; error: string; needsLateDecision?: boolean; needsDuplicateConfirm?: boolean }
+> {
   const user = await requireUser();
   const settings = await loadSettings();
   const punctuality = evaluatePunctuality(new Date(), settings);
@@ -122,6 +151,9 @@ export async function registerAttendance(input: {
 
   try {
     const result = await prisma.$transaction(async (tx) => {
+      // Bloquea el crédito para que dos envíos simultáneos (doble clic) se registren uno a la vez.
+      await tx.$queryRaw`SELECT id FROM "Credit" WHERE id = ${input.creditId} FOR UPDATE`;
+
       const credit = await tx.credit.findUnique({
         where: { id: input.creditId },
         include: { customer: true },
@@ -136,6 +168,21 @@ export async function registerAttendance(input: {
       // totalInstallments = 0 significa crédito sin límite de abonos (altas nuevas).
       if (credit.totalInstallments > 0 && credit.paidInstallments >= credit.totalInstallments) {
         throw new Error("Este crédito ya cubrió todos sus abonos.");
+      }
+
+      if (!input.allowDuplicateToday) {
+        const today = await tx.payment.findFirst({
+          where: { creditId: credit.id, paymentDate: { gte: startOfBusinessDay() } },
+          orderBy: { paymentDate: "desc" },
+          select: { receivedByName: true },
+        });
+        if (today) {
+          return {
+            ok: false as const,
+            needsDuplicateConfirm: true,
+            error: `Ya hay un abono registrado hoy${today.receivedByName ? ` (${today.receivedByName})` : ""}. Confirma explícitamente para registrar otro.`,
+          };
+        }
       }
 
       let streak = credit.currentStreak;
@@ -223,7 +270,7 @@ export async function registerAttendance(input: {
 }
 
 export async function markRewardDelivered(rewardId: string) {
-  await requireUser(["ADMIN"]);
+  await requireUser();
   await prisma.reward.update({
     where: { id: rewardId },
     data: {

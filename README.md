@@ -44,6 +44,17 @@ En la demo, el cliente en racha 4 es **María Elena Vargas · `CRD-000123`**: el
 
 Las altas nuevas no tienen número fijo de abonos: el crédito queda abierto (`totalInstallments = 0`) y en **Recepción de abono** se sigue contando racha, abonos y regalos como siempre. Los clientes anteriores conservan sus datos; los campos nuevos aparecen como "—".
 
+## Recepción de abono (`/asistencia`)
+
+1. Escanea el código de la tarjeta (lector USB + Enter, o botón de cámara). Si el código no existe se muestra un mensaje claro y no se abre ventana.
+2. Se abre una ventana con toda la ficha del cliente: código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, racha actual, número de abono y último abono (fecha y sucursal).
+3. **Marcar pago** pide confirmación ("¿Confirmar pago de NOMBRE?"). Al confirmar se registra el abono con la misma lógica de racha de siempre: si es tardío pregunta si se conserva o reinicia la racha, y al llegar a 5 puntuales se muestra el modal de premio. Después aparece un aviso de éxito, la ventana se cierra y el campo de escaneo queda enfocado para el siguiente cliente.
+4. **Cancelar** y la tecla **Esc** cierran la ventana sin registrar nada.
+
+**Evitar duplicados:** el botón se deshabilita mientras se guarda (el doble clic registra un solo abono; el servidor además bloquea el crédito durante el registro). Si el cliente ya tiene un abono registrado **hoy**, la ventana muestra una advertencia con la fecha y la sucursal, y se exige una confirmación extra explícita ("Sí, registrar otro abono hoy"); el servidor también la exige, aunque la ventana esté desactualizada. "Hoy" se calcula en la zona horaria del negocio, por defecto `America/Hermosillo`; se puede cambiar con la variable opcional `BUSINESS_TIMEZONE`.
+
+Tanto Sucursal como Administrador pueden marcar un premio como entregado desde el modal de premio.
+
 ## Clientes (administrador)
 
 Tabla con código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, abonos/racha y la sucursal que dio de alta al cliente. El buscador filtra por cualquiera de esos campos.
