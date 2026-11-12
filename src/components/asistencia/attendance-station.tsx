@@ -2,10 +2,9 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, ScanLine, Sparkles } from "lucide-react";
+import { AlertTriangle, ScanLine } from "lucide-react";
 import {
   lookupByBarcode,
-  markRewardDelivered,
   registerAttendance,
   type AttendanceLookup,
   type LateDecision,
@@ -16,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { StreakPips } from "@/components/streak-pips";
 import { formatDate, formatMoney } from "@/lib/utils";
 import { WebcamScanner } from "@/components/asistencia/webcam-scanner";
+import { WinPhotoModal } from "@/components/rewards/win-photo-modal";
 import {
   Dialog,
   DialogContent,
@@ -259,9 +259,14 @@ export function AttendanceStation() {
                   {credit ? (
                     <div>
                       <p className="mb-2 text-sm font-medium text-ink/70">
-                        Racha actual: {credit.currentStreak}/5
+                        Racha actual: {credit.currentStreak}
+                        {lookup.streakTarget ? `/${lookup.streakTarget}` : ""}
                       </p>
-                      <StreakPips current={credit.currentStreak} size="lg" />
+                      <StreakPips
+                        current={credit.currentStreak}
+                        total={lookup.streakTarget ?? Math.max(credit.currentStreak, 5)}
+                        size="lg"
+                      />
                     </div>
                   ) : (
                     <p className="rounded-2xl bg-ink/5 px-4 py-3 text-sm">
@@ -369,63 +374,13 @@ export function AttendanceStation() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!prize} onOpenChange={(next) => !next && setPrize(null)}>
-        <DialogContent
-          className="overflow-hidden bg-forest text-cream"
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            focusScan();
-          }}
-        >
-          <div className="pointer-events-none absolute inset-0 opacity-40">
-            {Array.from({ length: 18 }).map((_, index) => (
-              <span
-                key={index}
-                className="absolute h-2 w-2 rounded-full bg-gold confetti"
-                style={{
-                  left: `${(index * 17) % 100}%`,
-                  animationDelay: `${index * 0.08}s`,
-                }}
-              />
-            ))}
-          </div>
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-center gap-2 text-center text-gold">
-              <Sparkles className="h-6 w-6" />
-              ¡PREMIO DESBLOQUEADO!
-            </DialogTitle>
-            <DialogDescription className="text-center text-cream/75">
-              {prize?.customer} completó 5 abonos puntuales. {prize?.name}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="relative mt-5 flex flex-col gap-2 sm:flex-row">
-            <Button
-              variant="gold"
-              className="flex-1"
-              onClick={async () => {
-                if (!prize) return;
-                await markRewardDelivered(prize.id);
-                toast.success("Premio marcado como entregado");
-                setPrize(null);
-                focusScan();
-              }}
-            >
-              Marcar Premio como Entregado Ahora
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 border-cream/20 bg-transparent text-cream hover:bg-white/10"
-              onClick={() => {
-                toast.message("El premio quedó pendiente de entrega");
-                setPrize(null);
-                focusScan();
-              }}
-            >
-              Dejar Pendiente
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <WinPhotoModal
+        prize={prize}
+        onClose={() => {
+          setPrize(null);
+          focusScan();
+        }}
+      />
     </div>
   );
 }

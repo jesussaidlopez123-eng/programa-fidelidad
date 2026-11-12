@@ -7,6 +7,12 @@ import { evaluatePunctuality, punctualityLabel } from "@/lib/punctuality";
 import { requireUser } from "@/lib/auth/session";
 import { loadSettings } from "@/lib/settings";
 import { startOfBusinessDay } from "@/lib/business-time";
+import {
+  giftDisplayName,
+  loadActiveGiftTiers,
+  maxGiftThreshold,
+  nextGiftThreshold,
+} from "@/lib/gifts";
 
 export type LateDecision = "KEEP" | "RESET";
 
@@ -33,6 +39,7 @@ export type AttendanceLookup = {
   } | null;
   lastPayment: { at: string; byName: string | null; isOnTime: boolean } | null;
   paidToday: boolean;
+  streakTarget: number | null;
   punctuality: {
     isOnTime: boolean;
     label: string;
@@ -51,6 +58,8 @@ export type AttendanceResult = {
   rewardUnlocked: boolean;
   rewardId: string | null;
   rewardName: string | null;
+  giftSlot: number | null;
+  streakReset: boolean;
   notes: string;
 };
 
@@ -81,6 +90,10 @@ export async function lookupByBarcode(rawBarcode: string): Promise<
 
   const settings = await loadSettings();
   const punctuality = evaluatePunctuality(new Date(), settings);
+  const activeGifts = await loadActiveGiftTiers();
+  const streakTarget = credit
+    ? nextGiftThreshold(credit.currentStreak, activeGifts)
+    : maxGiftThreshold(activeGifts);
 
   const last = credit
     ? await prisma.payment.findFirst({
@@ -119,6 +132,7 @@ export async function lookupByBarcode(rawBarcode: string): Promise<
         ? { at: last.paymentDate.toISOString(), byName: last.receivedByName, isOnTime: last.isOnTime }
         : null,
       paidToday: !!last && last.paymentDate >= startOfBusinessDay(),
+      streakTarget,
       punctuality: {
         isOnTime: punctuality.isOnTime,
         label: punctualityLabel(punctuality),
@@ -185,29 +199,57 @@ export async function registerAttendance(input: {
         }
       }
 
+      const activeGifts = (
+        await tx.giftTier.findMany({
+          where: { marksRequired: { not: null } },
+          orderBy: [{ marksRequired: "asc" }, { slot: "asc" }],
+        })
+      ).filter(
+        (tier): tier is typeof tier & { marksRequired: number } =>
+          tier.marksRequired != null && tier.marksRequired > 0,
+      );
+
       let streak = credit.currentStreak;
       let rewardUnlocked = false;
       let rewardId: string | null = null;
       let rewardName: string | null = null;
+      let giftSlot: number | null = null;
+      let streakReset = false;
       let notes: string;
 
       if (punctuality.isOnTime) {
         streak += 1;
         notes = "Abono puntual";
-        if (streak >= settings.rewardEvery) {
+
+        const unlockedTier = activeGifts.filter((tier) => tier.marksRequired === streak);
+        if (unlockedTier.length > 0) {
+          const tier = unlockedTier[0];
+          const name = giftDisplayName(tier);
           const reward = await tx.reward.create({
             data: {
               customerId: credit.customerId,
               creditId: credit.id,
-              rewardName: settings.rewardName,
+              rewardName: name,
               status: "PENDING",
+              giftSlot: tier.slot,
+              marksRequired: tier.marksRequired,
+              unlockedByName: user.name,
             },
           });
           rewardUnlocked = true;
           rewardId = reward.id;
           rewardName = reward.rewardName;
+          giftSlot = tier.slot;
+          notes = `Abono puntual · ${name} desbloqueado`;
+        }
+
+        const maxMarks = maxGiftThreshold(activeGifts);
+        if (maxMarks != null && streak >= maxMarks) {
           streak = 0;
-          notes = `Abono puntual · ${settings.rewardName} desbloqueado`;
+          streakReset = true;
+          if (rewardUnlocked) {
+            notes = `${notes} · racha reiniciada`;
+          }
         }
       } else if (input.lateDecision === "RESET") {
         streak = 0;
@@ -253,6 +295,8 @@ export async function registerAttendance(input: {
           rewardUnlocked,
           rewardId,
           rewardName,
+          giftSlot,
+          streakReset,
           notes,
         },
       };
@@ -262,6 +306,7 @@ export async function registerAttendance(input: {
     revalidatePath("/asistencia");
     revalidatePath("/customers");
     revalidatePath("/rewards");
+    revalidatePath("/evidencias");
     return result;
   } catch (error) {
     const message = error instanceof Error ? error.message : "No se pudo registrar la asistencia.";
@@ -281,5 +326,7 @@ export async function markRewardDelivered(rewardId: string) {
   revalidatePath("/");
   revalidatePath("/rewards");
   revalidatePath("/asistencia");
+  revalidatePath("/customers");
+  revalidatePath("/evidencias");
   return { ok: true };
 }

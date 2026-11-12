@@ -133,7 +133,9 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
                 <tr key={customer.id} className="align-top">
                   <td className="px-3 py-3 font-mono text-xs text-teal">{customer.barcodeId}</td>
                   <td className="px-3 py-3 font-semibold">
-                    {customer.fullName}
+                    <Link href={`/customers/${customer.id}`} className="hover:text-teal hover:underline">
+                      {customer.fullName}
+                    </Link>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {credit ? statusBadge(credit.status) : null}
                       {pending > 0 ? <Badge tone="gold">{pending} regalo(s)</Badge> : null}
@@ -147,12 +149,15 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
                   <td className="px-3 py-3">{credit ? formatMoney(credit.installmentAmount) : "—"}</td>
                   <td className="px-3 py-3">
                     {credit
-                      ? `${credit.paidInstallments}${credit.totalInstallments > 0 ? `/${credit.totalInstallments}` : ""} · racha ${credit.currentStreak}/5`
+                      ? `${credit.paidInstallments}${credit.totalInstallments > 0 ? `/${credit.totalInstallments}` : ""} · racha ${credit.currentStreak}`
                       : "—"}
                   </td>
                   <td className="px-3 py-3">{customer.createdByName ?? "—"}</td>
                   <td className="px-3 py-3">
                     <div className="flex gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/customers/${customer.id}`}>Ficha</Link>
+                      </Button>
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/print/${customer.id}`}>
                           <Printer className="h-3.5 w-3.5" />

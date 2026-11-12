@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:setup": "prisma migrate deploy && prisma db seed",
     "build:local": "prisma generate && next build",
+    "test:e2e": "playwright test",
     "postinstall": "prisma generate"
   },
   "prisma": {
@@ -36,6 +37,7 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.1",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

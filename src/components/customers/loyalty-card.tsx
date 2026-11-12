@@ -21,7 +21,7 @@ export function LoyaltyCard({
             <h3 className="font-display text-xl leading-tight">{fullName}</h3>
           </div>
           <span className="rounded-full bg-gold px-2 py-1 text-[10px] font-bold uppercase tracking-wide">
-            5 sellos
+            Programa
           </span>
         </div>
         <div className="flex justify-center py-1">

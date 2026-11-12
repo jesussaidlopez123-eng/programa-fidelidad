@@ -85,19 +85,26 @@ model Credit {
 }
 
 model Reward {
-  id          String       @id @default(cuid())
-  customerId  String
-  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  creditId    String
-  credit      Credit       @relation(fields: [creditId], references: [id], onDelete: Cascade)
-  rewardName  String
-  status      RewardStatus @default(PENDING)
-  unlockedAt  DateTime     @default(now())
-  deliveredAt DateTime?
+  id              String       @id @default(cuid())
+  customerId      String
+  customer        Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  creditId        String
+  credit          Credit       @relation(fields: [creditId], references: [id], onDelete: Cascade)
+  rewardName      String
+  status          RewardStatus @default(PENDING)
+  unlockedAt      DateTime     @default(now())
+  deliveredAt     DateTime?
+  giftSlot        Int?
+  marksRequired   Int?
+  photoData       Bytes?
+  photoMimeType   String?
+  photoUploadedAt DateTime?
+  unlockedByName  String?
 
   @@index([customerId])
   @@index([creditId])
   @@index([status])
+  @@index([unlockedAt])
 }
 
 model Payment {
@@ -125,4 +132,17 @@ model AppSettings {
   rewardEvery   Int      @default(5)
   rewardName    String   @default("Premio 5to Abono")
   updatedAt     DateTime @updatedAt
+}
+
+/// Configuración de los 3 regalos del programa (Regalo 1, 2 y 3).
+/// marksRequired = null o vacío en la UI significa desactivado.
+model GiftTier {
+  id            String   @id @default(cuid())
+  slot          Int      @unique
+  name          String
+  description   String   @default("")
+  marksRequired Int?
+  updatedAt     DateTime @updatedAt
+
+  @@index([marksRequired])
 }

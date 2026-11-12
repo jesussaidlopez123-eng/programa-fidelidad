@@ -1,6 +1,6 @@
 # Fidelidad — Control de asistencia de abonos
 
-Programa de fidelidad para una casa de crédito. Cada cliente tiene una tarjeta con código de barras (el que se escanea al darlo de alta, por ejemplo `CRD-000123`). Al registrar la **asistencia del abono** se marca puntual o tardío según el día de corte y los días de gracia. Cinco abonos puntuales desbloquean un premio.
+Programa de fidelidad para una casa de crédito. Cada cliente tiene una tarjeta con código de barras (el que se escanea al darlo de alta, por ejemplo `CRD-000123`). Al registrar la **asistencia del abono** se marca puntual o tardío según el día de corte y los días de gracia. Los **regalos** se configuran por número de marcas puntuales (por defecto Regalo 1 = 5, Regalo 2 = 10, Regalo 3 = 15).
 
 Esta herramienta **no es una caja**: no cobra, no muestra totales recaudados ni actualiza un saldo en pantalla. Solo controla si el cliente cumplió su abono.
 
@@ -9,11 +9,12 @@ Rutas (todas requieren iniciar sesión):
 | Ruta | Quién entra | Qué hace |
 | --- | --- | --- |
 | `/login` | Todos | Inicio de sesión (usuario + contraseña) |
-| `/alta` | Sucursal y Administrador | Alta de cliente: escanear tarjeta nueva y capturar datos (ver abajo) |
+| `/alta` | Sucursal y Administrador | Alta de cliente: escanear tarjeta nueva y capturar datos |
 | `/asistencia` | Sucursal y Administrador | **Recepción de abono** (lector USB + cámara) |
-| `/` | Administrador | Dashboard (asistencias de hoy, regalos pendientes, clientes en racha 4/5) |
-| `/customers` | Administrador | Tabla de clientes con todos sus datos, búsqueda y eliminación con contraseña |
-| `/rewards` | Administrador | **Regalos** pendientes / entregados |
+| `/evidencias` | Sucursal y Administrador | Premios del día pendientes de foto |
+| `/` | Administrador | Dashboard (asistencias de hoy, regalos pendientes, rachas) |
+| `/customers` | Administrador | Tabla de clientes; ficha con fotos e historial de regalos |
+| `/rewards` | Administrador | **Regalos**: configuración de premios + premios ganados |
 | `/usuarios` | Administrador | Administrar usuarios |
 
 ## Usuarios y acceso
@@ -27,39 +28,61 @@ La primera vez que se despliega (y en cada build) el seed crea los usuarios que 
 
 **Contraseña temporal de todos: `0000`.** Entra como administrador y cámbiala en **Usuarios → Cambiar contraseña** para cada usuario.
 
-- **Sucursal** solo ve **Alta** y **Recepción de abono**. **Administrador** ve además Dashboard, Clientes, Regalos y Usuarios.
+- **Sucursal** ve **Alta**, **Recepción de abono** y **Evidencias**. **Administrador** ve además Dashboard, Clientes, Regalos y Usuarios.
 - El nombre de usuario no distingue mayúsculas de minúsculas (se guarda en mayúsculas) y debe ser único.
 - En **Usuarios** el administrador puede agregar, renombrar, cambiar contraseña y eliminar usuarios. No se puede eliminar al propio usuario ni al último administrador.
 - Cada cliente guarda qué sucursal lo dio de alta y cada abono qué sucursal lo recibió (se ve en Clientes y en el Dashboard).
 - La sesión es una cookie firmada `httpOnly` que dura 12 horas. **No necesitas variables nuevas**: la firma se deriva de `DATABASE_URL`/`DIRECT_URL`. Opcionalmente define `AUTH_SECRET` (mínimo 16 caracteres) en Vercel para usar tu propio secreto; cambiarlo (o cambiar las URLs de la base) cierra todas las sesiones.
 - Las contraseñas se guardan con `bcryptjs`. Si olvidas la contraseña de todos los administradores, edita la tabla `User` en Supabase o borra un administrador y haz Redeploy para que el seed lo recree con `0000`.
 
-En la demo, el cliente en racha 4 es **María Elena Vargas · `CRD-000123`**: el siguiente abono puntual desbloquea el premio (solo se crea si la base está vacía).
+En la demo, el cliente en racha 4 es **María Elena Vargas · `CRD-000123`**: el siguiente abono puntual desbloquea el Regalo 1 (solo se crea si la base está vacía).
 
-## Alta de clientes
+## Regalos (administrador)
 
-1. **Escanear tarjeta nueva**: el campo grande tiene foco automático para el lector USB (escribe el código y envía Enter) y hay un botón para escanear con la cámara. El código escaneado, sea cual sea, se guarda como el código de barras del cliente. Debe ser único: si ya existe, se avisa el nombre del cliente dueño. Como respaldo hay un enlace pequeño "generar código automático" (`CRD-000123`).
-2. **Datos del cliente**: Nombre, Número (teléfono), Plataforma (`PAYJOY` / `KREDIYA`), Modelo, IMEI, TAG/CURP y Monto de abono. Todos son obligatorios. Si el IMEI no tiene 15 dígitos se avisa y se pide confirmar, pero no se bloquea.
-3. Al guardar se crea el cliente y su crédito (con el monto de abono, solo como registro; no hay caja ni cobro) y la pantalla vuelve al escáner para el siguiente cliente, con un botón para imprimir la tarjeta del que se acaba de dar de alta.
+En `/rewards` hay una tabla editable:
 
-Las altas nuevas no tienen número fijo de abonos: el crédito queda abierto (`totalInstallments = 0`) y en **Recepción de abono** se sigue contando racha, abonos y regalos como siempre. Los clientes anteriores conservan sus datos; los campos nuevos aparecen como "—".
+| Columna | Significado |
+| --- | --- |
+| **Regalo** | Regalo 1, 2 y 3 |
+| **Nombre / descripción** | Texto del premio que se muestra al ganar |
+| **Número de marcas necesarias** | Enteros crecientes (por defecto 5, 10, 15). **Vacío = desactivado** |
+
+La configuración vive en la tabla `GiftTier` (seed idempotente). La migración convierte la regla anterior (`AppSettings.rewardEvery = 5`) en **Regalo 1 = 5**.
+
+Debajo, la tabla de **premios ganados** muestra miniatura de la foto (si hay) y el estado entregado/pendiente.
 
 ## Recepción de abono (`/asistencia`)
 
 1. Escanea el código de la tarjeta (lector USB + Enter, o botón de cámara). Si el código no existe se muestra un mensaje claro y no se abre ventana.
 2. Se abre una ventana con toda la ficha del cliente: código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, racha actual, número de abono y último abono (fecha y sucursal).
-3. **Marcar pago** pide confirmación ("¿Confirmar pago de NOMBRE?"). Al confirmar se registra el abono con la misma lógica de racha de siempre: si es tardío pregunta si se conserva o reinicia la racha, y al llegar a 5 puntuales se muestra el modal de premio. Después aparece un aviso de éxito, la ventana se cierra y el campo de escaneo queda enfocado para el siguiente cliente.
-4. **Cancelar** y la tecla **Esc** cierran la ventana sin registrar nada.
+3. **Marcar pago** pide confirmación ("¿Confirmar pago de NOMBRE?"). Al confirmar se registra el abono:
+   - Abono **puntual**: la racha suma +1. Si la racha alcanza exactamente las marcas de un regalo activo, se crea un `Reward` y aparece el modal grande **¡EL CLIENTE GANÓ!** con el nombre del cliente y el regalo.
+   - Tras el regalo con **mayor** número de marcas, la racha vuelve a **0**. Los regalos intermedios no reinician la racha.
+   - Abono **tardío**: no suma; eliges conservar la racha o reiniciarla a 0.
+4. En el modal del premio puedes **subir foto** (archivo o cámara con `capture`), ver vista previa, **Subir foto** o **Subir después**. La imagen se comprime en el navegador (JPEG ~1000 px, ~300 KB) y se guarda en Postgres (`bytea`). No hace falta disco en Vercel ni variables de entorno nuevas. La ruta `/api/rewards/[id]/photo` sirve la imagen solo con sesión.
+5. **Cancelar** y la tecla **Esc** cierran la ventana sin registrar nada.
 
-**Evitar duplicados:** el botón se deshabilita mientras se guarda (el doble clic registra un solo abono; el servidor además bloquea el crédito durante el registro). Si el cliente ya tiene un abono registrado **hoy**, la ventana muestra una advertencia con la fecha y la sucursal, y se exige una confirmación extra explícita ("Sí, registrar otro abono hoy"); el servidor también la exige, aunque la ventana esté desactualizada. "Hoy" se calcula en la zona horaria del negocio, por defecto `America/Hermosillo`; se puede cambiar con la variable opcional `BUSINESS_TIMEZONE`.
+**Evitar duplicados:** el botón se deshabilita mientras se guarda (el doble clic registra un solo abono; el servidor además bloquea el crédito durante el registro). Si el cliente ya tiene un abono registrado **hoy**, la ventana muestra una advertencia y se exige confirmación extra. "Hoy" se calcula en la zona horaria del negocio, por defecto `America/Hermosillo`; se puede cambiar con la variable opcional `BUSINESS_TIMEZONE`.
 
-Tanto Sucursal como Administrador pueden marcar un premio como entregado desde el modal de premio.
+## Evidencias (`/evidencias`)
+
+Módulo en el menú de **Sucursal** y **Administrador** (no es un ícono suelto en el header). Cada premio ganado **hoy** que aún no tiene foto aparece como tarjeta (cliente, regalo, hora, sucursal). El operador carga la foto; al subirla, la tarjeta desaparece y la imagen queda en la ficha del cliente en **Clientes**.
 
 ## Clientes (administrador)
 
 Tabla con código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, abonos/racha y la sucursal que dio de alta al cliente. El buscador filtra por cualquiera de esos campos.
 
-**Eliminar cliente**: pide la contraseña del administrador en sesión (se verifica en el servidor con bcrypt; con una contraseña incorrecta no se borra nada). El diálogo indica cuántos créditos, abonos y regalos se eliminarán junto con el cliente; es permanente.
+**Ficha del cliente** (`/customers/[id]`): datos, galería de fotos de premios e historial de regalos con fecha.
+
+**Eliminar cliente**: pide la contraseña del administrador en sesión (se verifica en el servidor con bcrypt). El diálogo indica cuántos créditos, abonos y regalos se eliminarán; es permanente.
+
+## Alta de clientes
+
+1. **Escanear tarjeta nueva**: el campo grande tiene foco automático para el lector USB y hay un botón para escanear con la cámara. El código escaneado se guarda como el código de barras del cliente. Debe ser único. Como respaldo hay un enlace "generar código automático" (`CRD-000123`).
+2. **Datos del cliente**: Nombre, Número (teléfono), Plataforma (`PAYJOY` / `KREDIYA`), Modelo, IMEI, TAG/CURP y Monto de abono. Todos son obligatorios. Si el IMEI no tiene 15 dígitos se avisa y se pide confirmar.
+3. Al guardar se crea el cliente y su crédito (con el monto de abono, solo como registro) y la pantalla vuelve al escáner.
+
+Las altas nuevas no tienen número fijo de abonos: el crédito queda abierto (`totalInstallments = 0`) y en **Recepción de abono** se sigue contando racha, abonos y regalos.
 
 ## Stack
 
@@ -103,13 +126,6 @@ DIRECT_URL="postgresql://postgres:postgres@127.0.0.1:5432/fidelidad?schema=publi
 4. Copia **Session pooler** (puerto 5432, host `*.pooler.supabase.com`) en `DIRECT_URL`, sin `?pgbouncer=true`.
 5. Si la contraseña tiene caracteres especiales, URL-encódala.
 
-Ejemplo (sustituye `PROJECT_REF`, `PASSWORD` y `REGION`):
-
-```env
-DATABASE_URL="postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres"
-```
-
 ## 2. Instalar, migrar y sembrar
 
 ```bash
@@ -121,7 +137,7 @@ npm run dev
 
 El servidor local queda en `http://127.0.0.1:3000`.
 
-`prisma migrate deploy` aplica las migraciones de `prisma/migrations` (usa `DIRECT_URL`). El seed crea 5 clientes de demostración; uno tiene `currentStreak: 4`.
+`prisma migrate deploy` aplica las migraciones de `prisma/migrations` (usa `DIRECT_URL`). Es seguro repetirlo; no borra datos. El seed crea usuarios iniciales, los tres `GiftTier` y, si la base no tiene clientes, 5 clientes de demostración (uno con `currentStreak: 4`).
 
 ## 3. Desplegar en Vercel (sin comandos locales)
 
@@ -131,46 +147,60 @@ El build de Vercel prepara la base de datos solo. No necesitas computadora ni te
 2. En [vercel.com](https://vercel.com) → **Add New Project** → importa el repo (Framework: Next.js, comando de build `npm run build`).
 3. En **Settings → Environment Variables** agrega solo estas dos variables (Production y Preview):
    - `DATABASE_URL`: *Transaction pooler* de Supabase (puerto 6543, con `?pgbouncer=true`).
-   - `DIRECT_URL`: *Session pooler* de Supabase (host `*.pooler.supabase.com`, **puerto 5432**, sin `pgbouncer=true`). Se usa para las migraciones.
+   - `DIRECT_URL`: *Session pooler* de Supabase (host `*.pooler.supabase.com`, **puerto 5432**, sin `pgbouncer=true`).
 4. Haz **Deploy** (o **Deployments → ⋯ → Redeploy** si ya existía).
 
 Durante el build, `npm run build` ejecuta en este orden:
 
-1. Verifica que existan `DATABASE_URL` y `DIRECT_URL`. Si falta alguna, o si `DIRECT_URL` usa el puerto 6543 / `pgbouncer=true`, el build **falla con un mensaje en español** que explica qué corregir (así no se publica una app rota).
+1. Verifica que existan `DATABASE_URL` y `DIRECT_URL`. Si falta alguna, o si `DIRECT_URL` usa el puerto 6543 / `pgbouncer=true`, el build **falla con un mensaje en español**.
 2. `prisma generate`.
-3. `prisma migrate deploy` (con límite de 120 s): crea o actualiza las tablas usando `DIRECT_URL`. Es seguro repetirlo; no borra datos. Si se cuelga, se cancela y muestra un mensaje útil en vez de quedarse esperando.
-4. Seed de demostración **solo si la base no tiene clientes**. Nunca duplica ni borra datos existentes, y si falla no rompe el build.
+3. `prisma migrate deploy` (con límite de 120 s): crea o actualiza las tablas usando `DIRECT_URL`. Es seguro repetirlo; no borra datos.
+4. Seed **idempotente** (usuarios y GiftTier; clientes demo solo si la base está vacía). Si falla no rompe el build.
 5. `next build`.
 
 Para desarrollo local sin tocar la base: `npm run build:local`.
 
+## Pruebas E2E (Playwright + Postgres local)
+
+Con la base local migrada y sembrada, y un build listo:
+
+```bash
+docker compose up -d   # o Postgres local en 5432
+cp .env.example .env   # ajusta a 127.0.0.1:5432/fidelidad
+npx prisma migrate deploy && npx prisma db seed
+npm run build:local
+npm run test:e2e
+```
+
+Los tests en `e2e/` arrancan `npm run start`, inician sesión contra Postgres local, configuran regalos, registran un abono que desbloquea premio, suben foto desde Evidencias y comprueban la ficha del cliente.
+
 ## Solución de problemas
 
 **Todas las páginas muestran "Application error: a server-side exception has occurred" (Vercel).**
-Casi siempre es la base de datos, no el código. No necesitas ejecutar comandos: las migraciones se aplican solas en cada despliegue.
+Casi siempre es la base de datos, no el código. Las migraciones se aplican solas en cada despliegue.
 
-1. En Vercel → **Settings → Environment Variables** confirma que existen `DATABASE_URL` y `DIRECT_URL`, y haz **Redeploy**. Si falta alguna, el build fallará con un mensaje en español que dice cuál.
-2. Abre `https://TU-APP.vercel.app/api/health`. Responde `{"ok": true}` si todo está bien; si no, muestra el error (sin credenciales), los **nombres** de las variables que faltan y una sugerencia.
-3. **No conecta** (`P1001`): en Supabase usa el *Transaction pooler* (puerto 6543, host `*.pooler.supabase.com`) en `DATABASE_URL` con `?pgbouncer=true`. La conexión directa (`db.xxxx.supabase.co:5432`) es solo IPv6 y suele fallar desde Vercel.
-4. **El build se queda colgado o falla en `prisma migrate deploy`** (último log: `Datasource "db" ... pooler.supabase.com:6543`): `DIRECT_URL` está apuntando al puerto **6543** (Transaction pooler / pgbouncer), que no soporta el bloqueo (advisory lock) que usa Prisma Migrate. Solución: en Supabase → Project Settings → Database → Connection string → **Session pooler**, copia esa URL (host `*.pooler.supabase.com`, puerto **5432**, usuario `postgres.PROJECT_REF`, sin `?pgbouncer=true`) y ponla en `DIRECT_URL` en Vercel; `DATABASE_URL` se queda con el puerto 6543. Haz **Redeploy**. El build ahora detecta este error antes de migrar y cancela las migraciones si tardan más de 120 s.
-5. **Contraseña incorrecta** (`P1000`): si tiene caracteres especiales (`@`, `#`, `/`), codifícala (URL-encode).
-6. **Prisma Client no generado**: el build ya ejecuta `prisma generate`. Si cambiaste el comando de build en Vercel, déjalo en `npm run build`.
-
-Para ver los logs en Vercel: Project → **Deployments** → el despliegue → **Build Logs** (errores de migración) o **Logs** (errores en ejecución), y busca el `Digest` que muestra el error.
+1. En Vercel → **Settings → Environment Variables** confirma `DATABASE_URL` y `DIRECT_URL`, y haz **Redeploy**.
+2. Abre `https://TU-APP.vercel.app/api/health`. Responde `{"ok": true}` si todo está bien.
+3. **No conecta** (`P1001`): usa el *Transaction pooler* (puerto 6543) en `DATABASE_URL` con `?pgbouncer=true`.
+4. **El build se queda colgado en `prisma migrate deploy`**: `DIRECT_URL` debe ser Session pooler puerto **5432**, sin `pgbouncer=true`.
+5. **Contraseña incorrecta** (`P1000`): URL-encode caracteres especiales.
+6. **Prisma Client no generado**: el build ya ejecuta `prisma generate`.
 
 ## Scripts
 
 | Comando | Qué hace |
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo en `127.0.0.1:3000` |
-| `npm run build` | Verifica variables, `prisma generate`, `prisma migrate deploy`, seed si la base está vacía y `next build` (lo usa Vercel) |
+| `npm run build` | Verifica variables, `prisma generate`, `prisma migrate deploy`, seed y `next build` (lo usa Vercel) |
 | `npm run build:local` | `prisma generate` + `next build` (sin tocar la base) |
-| `npm run db:setup` | `prisma migrate deploy` y seed (solo si no hay clientes) |
+| `npm run db:setup` | `prisma migrate deploy` y seed |
+| `npm run test:e2e` | Playwright contra la app en `127.0.0.1:3000` y Postgres local |
 
 ## Flujo de fidelidad
 
 1. Escanea el `barcodeId` en `/asistencia`.
 2. Un abono **puntual** suma +1 a la racha.
-3. Al llegar a 5: modal **¡PREMIO DESBLOQUEADO!**, se crea un `Reward` y la racha vuelve a 0.
-4. Un abono **tardío** no suma; eliges conservar la racha o reiniciarla a 0.
-5. Puntual vs tardío se calcula con el día de corte y los días de gracia (editables en el Dashboard).
+3. Al alcanzar las marcas de un regalo activo: modal **¡EL CLIENTE GANÓ!**, se crea un `Reward` y puedes subir la foto o dejarla para **Evidencias**.
+4. Tras el regalo con más marcas, la racha vuelve a 0.
+5. Un abono **tardío** no suma; eliges conservar la racha o reiniciarla a 0.
+6. Puntual vs tardío se calcula con el día de corte y los días de gracia (editables en el Dashboard). Los regalos se editan en `/rewards`.

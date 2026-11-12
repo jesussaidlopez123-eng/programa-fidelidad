@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth/session";
 import Link from "next/link";
-import { Gift, ScanLine, Stamp, Users } from "lucide-react";
+import { Gift, Images, ScanLine, Stamp, Users } from "lucide-react";
 import { getDashboardData } from "@/app/actions/dashboard";
 import { SettingsCard } from "@/components/dashboard/settings-card";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ export default async function DashboardPage() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Kpi
           icon={<ScanLine className="h-5 w-5" />}
           label="Asistencias de abono hoy"
@@ -34,9 +34,14 @@ export default async function DashboardPage() {
           value={String(data.pendingRewards)}
         />
         <Kpi
+          icon={<Images className="h-5 w-5" />}
+          label="Fotos pendientes hoy"
+          value={String(data.pendingPhotos)}
+        />
+        <Kpi
           icon={<Stamp className="h-5 w-5" />}
-          label="Clientes en racha 4/5"
-          value={String(data.streakFour.length)}
+          label={`Clientes en racha ${data.almostThere}/${data.firstThreshold}`}
+          value={String(data.streakNear.length)}
         />
         <Kpi
           icon={<Users className="h-5 w-5" />}
@@ -53,11 +58,13 @@ export default async function DashboardPage() {
               Ir a asistencia
             </Link>
           </div>
-          {data.streakFour.length === 0 ? (
-            <p className="text-sm text-ink/55">Nadie está en racha 4 ahora mismo.</p>
+          {data.streakNear.length === 0 ? (
+            <p className="text-sm text-ink/55">
+              Nadie está en racha {data.almostThere} ahora mismo.
+            </p>
           ) : (
             <ul className="space-y-3">
-              {data.streakFour.map((credit) => (
+              {data.streakNear.map((credit) => (
                 <li
                   key={credit.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-cream px-4 py-3"
@@ -66,7 +73,9 @@ export default async function DashboardPage() {
                     <p className="font-semibold">{credit.customer.fullName}</p>
                     <p className="font-mono text-xs text-teal">{credit.customer.barcodeId}</p>
                   </div>
-                  <Badge tone="gold">Racha 4/5</Badge>
+                  <Badge tone="gold">
+                    Racha {credit.currentStreak}/{credit.target}
+                  </Badge>
                 </li>
               ))}
             </ul>
@@ -74,7 +83,12 @@ export default async function DashboardPage() {
         </div>
 
         <div className="rounded-3xl border border-line bg-white p-5 shadow-sm">
-          <h2 className="mb-4 font-display text-2xl">Asistencias de hoy</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-2xl">Asistencias de hoy</h2>
+            <Link href="/evidencias" className="text-sm font-semibold text-teal hover:underline">
+              Evidencias
+            </Link>
+          </div>
           {data.recentAttendances.length === 0 ? (
             <p className="text-sm text-ink/55">Todavía no hay registros hoy.</p>
           ) : (
@@ -106,7 +120,6 @@ export default async function DashboardPage() {
       <SettingsCard
         dueDayOfMonth={data.settings?.dueDayOfMonth ?? 15}
         graceDays={data.settings?.graceDays ?? 3}
-        rewardName={data.settings?.rewardName ?? "Premio 5to Abono"}
       />
     </div>
   );

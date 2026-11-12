@@ -13,7 +13,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   SUCURSAL: "Sucursal",
 };
 
-const SUCURSAL_PATHS = ["/alta", "/asistencia", "/print"];
+const SUCURSAL_PATHS = ["/alta", "/asistencia", "/evidencias", "/print", "/api/rewards"];
 
 export function isRole(value: unknown): value is Role {
   return value === "ADMIN" || value === "SUCURSAL";

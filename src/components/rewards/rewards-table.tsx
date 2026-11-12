@@ -13,6 +13,9 @@ type RewardRow = {
   status: "PENDING" | "DELIVERED";
   unlockedAt: Date;
   deliveredAt: Date | null;
+  hasPhoto: boolean;
+  giftSlot: number | null;
+  marksRequired: number | null;
   customer: { fullName: string; barcodeId: string };
   credit: { concept: string };
 };
@@ -31,9 +34,10 @@ export function RewardsTable({ rewards }: { rewards: RewardRow[] }) {
   return (
     <div className="overflow-hidden rounded-3xl border border-line bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[860px] text-left text-sm">
           <thead className="bg-cream text-ink/60">
             <tr>
+              <th className="px-4 py-3 font-medium">Foto</th>
               <th className="px-4 py-3 font-medium">Cliente</th>
               <th className="px-4 py-3 font-medium">Premio</th>
               <th className="px-4 py-3 font-medium">Crédito</th>
@@ -46,10 +50,29 @@ export function RewardsTable({ rewards }: { rewards: RewardRow[] }) {
             {rewards.map((reward) => (
               <tr key={reward.id} className="border-t border-line">
                 <td className="px-4 py-3">
+                  {reward.hasPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/rewards/${reward.id}/photo`}
+                      alt={`Foto de ${reward.customer.fullName}`}
+                      className="h-14 w-14 rounded-xl object-cover ring-1 ring-line"
+                    />
+                  ) : (
+                    <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-cream text-[10px] uppercase tracking-wide text-ink/40 ring-1 ring-line">
+                      Sin foto
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
                   <p className="font-medium">{reward.customer.fullName}</p>
                   <p className="font-mono text-xs text-teal">{reward.customer.barcodeId}</p>
                 </td>
-                <td className="px-4 py-3">{reward.rewardName}</td>
+                <td className="px-4 py-3">
+                  <p>{reward.rewardName}</p>
+                  {reward.marksRequired ? (
+                    <p className="text-xs text-ink/50">{reward.marksRequired} marcas</p>
+                  ) : null}
+                </td>
                 <td className="px-4 py-3 text-ink/70">{reward.credit.concept}</td>
                 <td className="px-4 py-3">
                   {reward.status === "PENDING" ? (

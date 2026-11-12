@@ -32,6 +32,22 @@ async function ensureUsers() {
   );
 }
 
+async function ensureGiftTiers() {
+  const defaults = [
+    { id: "gift-tier-1", slot: 1, name: "Regalo 1", description: "", marksRequired: 5 },
+    { id: "gift-tier-2", slot: 2, name: "Regalo 2", description: "", marksRequired: 10 },
+    { id: "gift-tier-3", slot: 3, name: "Regalo 3", description: "", marksRequired: 15 },
+  ];
+  for (const tier of defaults) {
+    await prisma.giftTier.upsert({
+      where: { slot: tier.slot },
+      update: {},
+      create: tier,
+    });
+  }
+  console.log("[seed] GiftTier 1/2/3 asegurados (5, 10, 15 marcas).");
+}
+
 async function main() {
   await ensureUsers();
 
@@ -43,9 +59,11 @@ async function main() {
       dueDayOfMonth: 15,
       graceDays: 3,
       rewardEvery: 5,
-      rewardName: "Premio 5to Abono",
+      rewardName: "Regalo 1",
     },
   });
+
+  await ensureGiftTiers();
 
   const existingCustomers = await prisma.customer.count();
   if (existingCustomers > 0) {
@@ -224,13 +242,15 @@ async function main() {
     data: {
       customerId: lucia.id,
       creditId: luciaCredit.id,
-      rewardName: "Premio 5to Abono",
+      rewardName: "Regalo 1",
       status: "PENDING",
       unlockedAt: daysAgo(20),
+      giftSlot: 1,
+      marksRequired: 5,
     },
   });
 
-  console.log("Seed listo. Cliente en racha 4: María Elena Vargas · CRD-000123");
+  console.log("Seed listo. Cliente en racha 4: María Elena Vargas · CRD-000123 (siguiente puntual = Regalo 1)");
 }
 
 function daysAgo(days: number) {

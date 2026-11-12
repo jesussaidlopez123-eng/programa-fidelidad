@@ -11,8 +11,8 @@ export default async function AsistenciaPage() {
         <p className="text-xs uppercase tracking-[0.25em] text-teal">Estación de sellos</p>
         <h1 className="font-display text-4xl">Recepción de abono</h1>
         <p className="mt-2 text-ink/65">
-          Escanea la tarjeta. El sistema marca puntual o tardío según el día de corte. Cinco
-          abonos puntuales desbloquean el premio.
+          Escanea la tarjeta. El sistema marca puntual o tardío según el día de corte. Al alcanzar
+          las marcas de un regalo configurado se desbloquea el premio.
         </p>
       </header>
       <AttendanceStation />
