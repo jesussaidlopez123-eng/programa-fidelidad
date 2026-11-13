@@ -58,6 +58,7 @@ export async function createUser(formData: FormData): Promise<Result> {
     throw error;
   }
   revalidatePath("/usuarios");
+  revalidatePath("/login");
   return { ok: true };
 }
 
@@ -78,6 +79,7 @@ export async function updateUserName(id: string, rawName: string): Promise<Resul
     throw error;
   }
   revalidatePath("/usuarios");
+  revalidatePath("/login");
   return { ok: true };
 }
 
@@ -118,6 +120,7 @@ export async function deleteUser(id: string): Promise<Result> {
     }
     await tx.user.delete({ where: { id } });
     revalidatePath("/usuarios");
+    revalidatePath("/login");
     return { ok: true };
   });
 }

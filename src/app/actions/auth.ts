@@ -3,8 +3,19 @@
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { ROLE_HOME, normalizeUserName } from "@/lib/auth/config";
+import { ROLE_HOME, normalizeUserName, type Role } from "@/lib/auth/config";
 import { endSession, startSession } from "@/lib/auth/session";
+
+export type LoginUserOption = { name: string; role: Role };
+
+/** Lista pública para el selector de login: solo nombre y rol (sin hashes). */
+export async function listLoginUsers(): Promise<LoginUserOption[]> {
+  const users = await prisma.user.findMany({
+    orderBy: [{ role: "desc" }, { name: "asc" }],
+    select: { name: true, role: true },
+  });
+  return users;
+}
 
 const INVALID = { ok: false as const, error: "Usuario o contraseña incorrectos." };
 // Hash de relleno para que el tiempo de respuesta no revele si el usuario existe.
