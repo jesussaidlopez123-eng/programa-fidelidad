@@ -1,4 +1,3 @@
-import ExcelJS from "exceljs";
 import { formatDate, formatMoney } from "@/lib/utils";
 
 export type RegistroExportRow = {
@@ -23,25 +22,25 @@ export type RegistroExportRow = {
   rewardNames: string;
 };
 
-const COLUMNS: { header: string; key: keyof RegistroExportRow | "createdAtText" | "lastPaymentText" | "installmentText"; width: number }[] = [
-  { header: "Código", key: "barcodeId", width: 14 },
-  { header: "Nombre", key: "fullName", width: 28 },
-  { header: "Número", key: "phone", width: 14 },
-  { header: "Plataforma", key: "platform", width: 12 },
-  { header: "Modelo", key: "model", width: 18 },
-  { header: "IMEI", key: "imei", width: 18 },
-  { header: "TAG/CURP", key: "tagCurp", width: 18 },
-  { header: "Monto de abono", key: "installmentText", width: 14 },
-  { header: "Racha", key: "racha", width: 10 },
-  { header: "Abonos totales", key: "abonosTotales", width: 14 },
-  { header: "Sucursal de alta", key: "createdByName", width: 18 },
-  { header: "Fecha de alta", key: "createdAtText", width: 20 },
-  { header: "Último abono", key: "lastPaymentText", width: 20 },
-  { header: "Estado crédito", key: "creditStatus", width: 14 },
-  { header: "Regalos ganados", key: "rewardsWon", width: 14 },
-  { header: "Regalos pendientes", key: "rewardsPending", width: 16 },
-  { header: "Nombres de regalos", key: "rewardNames", width: 32 },
-];
+const HEADERS = [
+  "Código",
+  "Nombre",
+  "Número",
+  "Plataforma",
+  "Modelo",
+  "IMEI",
+  "TAG/CURP",
+  "Monto de abono",
+  "Racha",
+  "Abonos totales",
+  "Sucursal de alta",
+  "Fecha de alta",
+  "Último abono",
+  "Estado crédito",
+  "Regalos ganados",
+  "Regalos pendientes",
+  "Nombres de regalos",
+] as const;
 
 function statusLabel(status: string | null) {
   if (status === "ACTIVE") return "Activo";
@@ -57,50 +56,42 @@ function fileDateStamp(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
+function toSheetRow(row: RegistroExportRow): Record<(typeof HEADERS)[number], string | number> {
+  return {
+    Código: row.barcodeId,
+    Nombre: row.fullName,
+    Número: row.phone ?? "",
+    Plataforma: row.platform ?? "",
+    Modelo: row.model ?? "",
+    IMEI: row.imei ?? "",
+    "TAG/CURP": row.tagCurp ?? "",
+    "Monto de abono": row.installmentAmount != null ? formatMoney(row.installmentAmount) : "",
+    Racha: row.racha ?? "",
+    "Abonos totales": row.abonosTotales ?? "",
+    "Sucursal de alta": row.createdByName ?? "",
+    "Fecha de alta": formatDate(row.createdAt),
+    "Último abono": row.lastPaymentAt ? formatDate(row.lastPaymentAt) : "",
+    "Estado crédito": statusLabel(row.creditStatus),
+    "Regalos ganados": row.rewardsWon,
+    "Regalos pendientes": row.rewardsPending,
+    "Nombres de regalos": row.rewardNames,
+  };
+}
+
 /** Genera y descarga `registro-clientes-YYYY-MM-DD.xlsx` con las filas dadas (ya filtradas o todas). */
 export async function downloadRegistroExcel(rows: RegistroExportRow[]) {
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Fidelidad CREDICEL";
-  workbook.created = new Date();
-
-  const sheet = workbook.addWorksheet("Registro", {
-    views: [{ state: "frozen", ySplit: 1 }],
-  });
-
-  sheet.columns = COLUMNS.map((column) => ({
-    header: column.header,
-    key: column.key,
-    width: column.width,
+  // Import dinámico: evita arrastrar SheetJS al bundle inicial / SSR.
+  const XLSX = await import("xlsx");
+  const sheet = XLSX.utils.json_to_sheet(rows.map(toSheetRow), { header: [...HEADERS] });
+  sheet["!cols"] = HEADERS.map((header) => ({
+    wch: Math.max(12, Math.min(36, header.length + 4)),
   }));
 
-  const header = sheet.getRow(1);
-  header.font = { bold: true };
-  header.alignment = { vertical: "middle" };
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, "Registro");
 
-  for (const row of rows) {
-    sheet.addRow({
-      barcodeId: row.barcodeId,
-      fullName: row.fullName,
-      phone: row.phone ?? "",
-      platform: row.platform ?? "",
-      model: row.model ?? "",
-      imei: row.imei ?? "",
-      tagCurp: row.tagCurp ?? "",
-      installmentText: row.installmentAmount != null ? formatMoney(row.installmentAmount) : "",
-      racha: row.racha ?? "",
-      abonosTotales: row.abonosTotales ?? "",
-      createdByName: row.createdByName ?? "",
-      createdAtText: formatDate(row.createdAt),
-      lastPaymentText: row.lastPaymentAt ? formatDate(row.lastPaymentAt) : "",
-      creditStatus: statusLabel(row.creditStatus),
-      rewardsWon: row.rewardsWon,
-      rewardsPending: row.rewardsPending,
-      rewardNames: row.rewardNames,
-    });
-  }
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], {
+  const raw = XLSX.write(workbook, { bookType: "xlsx", type: "array" }) as number[];
+  const blob = new Blob([new Uint8Array(raw)], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const url = URL.createObjectURL(blob);

@@ -72,7 +72,7 @@ Módulo en el menú de **Sucursal** y **Administrador** (no es un ícono suelto 
 
 Menú **Registro** (ruta `/customers`, solo ADMIN). Tabla con código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, **Racha** y **Abonos totales** (columnas separadas) y la sucursal que dio de alta al cliente. El buscador filtra por cualquiera de esos campos.
 
-**Exportar Excel**: botón junto al buscador. Descarga `registro-clientes-YYYY-MM-DD.xlsx` con lo **visible**: si hay búsqueda, solo los filtrados; si no, todo el registro. Columnas: Código, Nombre, Número, Plataforma, Modelo, IMEI, TAG/CURP, Monto de abono, **Racha** (`currentStreak`), **Abonos totales** (cantidad de pagos registrados), Sucursal de alta, Fecha de alta, Último abono, Estado crédito, Regalos ganados / pendientes y nombres.
+**Exportar Excel**: botón junto al buscador. Descarga `registro-clientes-YYYY-MM-DD.xlsx` (SheetJS/`xlsx`) con lo **visible**: si hay búsqueda, solo los filtrados; si no, todo el registro. Columnas: Código, Nombre, Número, Plataforma, Modelo, IMEI, TAG/CURP, Monto de abono, **Racha** (`currentStreak`), **Abonos totales** (cantidad de pagos registrados), Sucursal de alta, Fecha de alta, Último abono, Estado crédito, Regalos ganados / pendientes y nombres.
 
 **Ficha del cliente** (`/customers/[id]`): datos, galería de fotos de premios e historial de regalos con fecha.
 
