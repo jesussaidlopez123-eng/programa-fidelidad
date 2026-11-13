@@ -14,8 +14,8 @@ export default async function UsuariosPage() {
         <p className="text-xs uppercase tracking-[0.25em] text-muted">Administración</p>
         <h1 className="font-display text-4xl font-semibold">Usuarios</h1>
         <p className="mt-2 text-muted">
-          Cada sucursal entra con su propio usuario. Las sucursales solo ven Alta y Recepción de
-          abono; los administradores ven todo.
+          Cada sucursal entra con su propio usuario. Las sucursales ven Recepción de abono,
+          Evidencias y Alta; los administradores ven todo.
         </p>
       </header>
       <UsersManager
