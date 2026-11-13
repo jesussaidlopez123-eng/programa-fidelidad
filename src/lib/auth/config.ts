@@ -5,7 +5,7 @@ export const SESSION_SECONDS = 60 * 60 * 12;
 
 export const ROLE_HOME: Record<Role, string> = {
   ADMIN: "/",
-  SUCURSAL: "/alta",
+  SUCURSAL: "/asistencia",
 };
 
 export const ROLE_LABEL: Record<Role, string> = {
