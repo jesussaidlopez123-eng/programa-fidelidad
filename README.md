@@ -16,6 +16,7 @@ Rutas (todas requieren iniciar sesión):
 | `/customers` | Administrador | **Registro** (antes Clientes): tabla, ficha y exportación Excel |
 | `/rewards` | Administrador | **Regalos**: configuración de premios + premios ganados |
 | `/usuarios` | Administrador | Administrar usuarios |
+| `/impresion-tarjetas` | Administrador | **Impresión de tarjetas**: lotes PDF A4 (calcomanía) |
 
 ## Usuarios y acceso
 
@@ -28,7 +29,7 @@ La primera vez que se despliega (y en cada build) el seed crea los usuarios que 
 
 **Contraseña temporal de todos: `0000`.** Entra como administrador y cámbiala en **Usuarios → Cambiar contraseña** para cada usuario.
 
-- **Sucursal** ve **Alta**, **Recepción de abono** y **Evidencias**. **Administrador** ve además Dashboard, Registro, Regalos y Usuarios.
+- **Sucursal** ve **Alta**, **Recepción de abono** y **Evidencias**. **Administrador** ve además Dashboard, Registro, Regalos, Usuarios e **Impresión de tarjetas**.
 - El nombre de usuario no distingue mayúsculas de minúsculas (se guarda en mayúsculas) y debe ser único.
 - En **Usuarios** el administrador puede agregar, renombrar, cambiar contraseña y eliminar usuarios. No se puede eliminar al propio usuario ni al último administrador.
 - Cada cliente guarda qué sucursal lo dio de alta y cada abono qué sucursal lo recibió (se ve en Registro y en el Dashboard).
@@ -85,6 +86,23 @@ Menú **Registro** (ruta `/customers`, solo ADMIN). Tabla con código, nombre, n
 3. Al guardar se crea el cliente y su crédito (monto de abono + `totalWeeks`; `totalInstallments` sigue en 0) y la pantalla vuelve al escáner.
 
 Las altas nuevas no cierran el crédito por número de abonos (`totalInstallments = 0`); **Semanas totales** es solo el plazo informado. En **Recepción de abono** se sigue contando racha, abonos y regalos.
+
+## Impresión de tarjetas (administrador)
+
+Menú **Impresión de tarjetas** (última opción, ruta `/impresion-tarjetas`, solo ADMIN).
+
+1. **Configurar lote**: cantidad (1–200) y número inicial opcional, o continuar desde el último lote (`AppSettings.nextCardSequence`).
+2. **Cambiar fondo**: sube JPG/PNG desde la PC; se guarda en Postgres (`AppSettings.cardBackgroundData`, bytea). Sin fondo = silueta limpia con borde.
+3. **Vista previa** en pantalla (primera hoja + tarjeta grande) con Code 128 y el texto `CRD-######`.
+4. **Generar PDF**: descarga un PDF A4 con siluetas ISO/IEC 7810 ID-1 (≈ 85.6×53.98 mm), varias por hoja, listo para papel calcomanía. Los códigos se reservan en historial (`CardPrintBatch`) **sin crear clientes**; se asignan al escanearlos en **Alta**.
+
+Prueba local del motor PDF (sin base de datos):
+
+```bash
+node scripts/test-card-pdf.mjs
+```
+
+Genera `tmp/tarjetas-prueba.pdf`.
 
 ## Stack
 
