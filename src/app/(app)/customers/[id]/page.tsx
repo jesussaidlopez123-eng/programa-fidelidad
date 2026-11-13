@@ -46,7 +46,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
     <div className="mx-auto max-w-5xl space-y-8">
       <header className="space-y-2">
         <Link href="/customers" className="text-sm font-semibold text-brand hover:underline">
-          ← Volver a clientes
+          ← Volver a Registro
         </Link>
         <p className="text-xs uppercase tracking-[0.25em] text-muted">Ficha</p>
         <h1 className="font-display text-4xl font-semibold">{customer.fullName}</h1>

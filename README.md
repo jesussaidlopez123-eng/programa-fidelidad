@@ -13,7 +13,7 @@ Rutas (todas requieren iniciar sesión):
 | `/asistencia` | Sucursal y Administrador | **Recepción de abono** (lector USB + cámara) |
 | `/evidencias` | Sucursal y Administrador | Premios del día pendientes de foto |
 | `/` | Administrador | Dashboard (asistencias de hoy, regalos pendientes, rachas) |
-| `/customers` | Administrador | Tabla de clientes; ficha con fotos e historial de regalos |
+| `/customers` | Administrador | **Registro** (antes Clientes): tabla, ficha y exportación Excel |
 | `/rewards` | Administrador | **Regalos**: configuración de premios + premios ganados |
 | `/usuarios` | Administrador | Administrar usuarios |
 
@@ -28,10 +28,10 @@ La primera vez que se despliega (y en cada build) el seed crea los usuarios que 
 
 **Contraseña temporal de todos: `0000`.** Entra como administrador y cámbiala en **Usuarios → Cambiar contraseña** para cada usuario.
 
-- **Sucursal** ve **Alta**, **Recepción de abono** y **Evidencias**. **Administrador** ve además Dashboard, Clientes, Regalos y Usuarios.
+- **Sucursal** ve **Alta**, **Recepción de abono** y **Evidencias**. **Administrador** ve además Dashboard, Registro, Regalos y Usuarios.
 - El nombre de usuario no distingue mayúsculas de minúsculas (se guarda en mayúsculas) y debe ser único.
 - En **Usuarios** el administrador puede agregar, renombrar, cambiar contraseña y eliminar usuarios. No se puede eliminar al propio usuario ni al último administrador.
-- Cada cliente guarda qué sucursal lo dio de alta y cada abono qué sucursal lo recibió (se ve en Clientes y en el Dashboard).
+- Cada cliente guarda qué sucursal lo dio de alta y cada abono qué sucursal lo recibió (se ve en Registro y en el Dashboard).
 - La sesión es una cookie firmada `httpOnly` que dura 12 horas. **No necesitas variables nuevas**: la firma se deriva de `DATABASE_URL`/`DIRECT_URL`. Opcionalmente define `AUTH_SECRET` (mínimo 16 caracteres) en Vercel para usar tu propio secreto; cambiarlo (o cambiar las URLs de la base) cierra todas las sesiones.
 - Las contraseñas se guardan con `bcryptjs`. Si olvidas la contraseña de todos los administradores, edita la tabla `User` en Supabase o borra un administrador y haz Redeploy para que el seed lo recree con `0000`.
 
@@ -66,11 +66,13 @@ Debajo, la tabla de **premios ganados** muestra miniatura de la foto (si hay) y 
 
 ## Evidencias (`/evidencias`)
 
-Módulo en el menú de **Sucursal** y **Administrador** (no es un ícono suelto en el header). Cada premio ganado **hoy** que aún no tiene foto aparece como tarjeta (cliente, regalo, hora, sucursal). El operador carga la foto; al subirla, la tarjeta desaparece y la imagen queda en la ficha del cliente en **Clientes**.
+Módulo en el menú de **Sucursal** y **Administrador** (no es un ícono suelto en el header). Cada premio ganado **hoy** que aún no tiene foto aparece como tarjeta (cliente, regalo, hora, sucursal). El operador carga la foto; al subirla, la tarjeta desaparece y la imagen queda en la ficha del cliente en **Registro**.
 
-## Clientes (administrador)
+## Registro (administrador)
 
-Tabla con código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, abonos/racha y la sucursal que dio de alta al cliente. El buscador filtra por cualquiera de esos campos.
+Menú **Registro** (ruta `/customers`, solo ADMIN). Tabla con código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, **Racha** y **Abonos totales** (columnas separadas) y la sucursal que dio de alta al cliente. El buscador filtra por cualquiera de esos campos.
+
+**Exportar Excel**: botón junto al buscador. Descarga `registro-clientes-YYYY-MM-DD.xlsx` (SheetJS/`xlsx`) con lo **visible**: si hay búsqueda, solo los filtrados; si no, todo el registro. Columnas: Código, Nombre, Número, Plataforma, Modelo, IMEI, TAG/CURP, Monto de abono, **Racha** (`currentStreak`), **Abonos totales** (cantidad de pagos registrados), Sucursal de alta, Fecha de alta, Último abono, Estado crédito, Regalos ganados / pendientes y nombres.
 
 **Ficha del cliente** (`/customers/[id]`): datos, galería de fotos de premios e historial de regalos con fecha.
 

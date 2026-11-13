@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Printer, Search, Trash2 } from "lucide-react";
+import { Download, Printer, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteCustomer } from "@/app/actions/customers";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { downloadRegistroExcel, type RegistroExportRow } from "@/lib/export-registro";
 import { formatMoney } from "@/lib/utils";
 
 type Credit = {
@@ -28,6 +29,7 @@ type Credit = {
   currentStreak: number;
   status: "ACTIVE" | "COMPLETED" | "DEFAULTED";
   _count: { payments: number };
+  payments: { paymentDate: Date | string }[];
 };
 
 type Customer = {
@@ -42,7 +44,7 @@ type Customer = {
   createdByName: string | null;
   createdAt: Date | string;
   credits: Credit[];
-  rewards: { id: string; status: "PENDING" | "DELIVERED" }[];
+  rewards: { id: string; rewardName: string; status: "PENDING" | "DELIVERED" }[];
 };
 
 function normalize(value: string) {
@@ -52,9 +54,35 @@ function normalize(value: string) {
     .toLowerCase();
 }
 
+function toExportRow(customer: Customer): RegistroExportRow {
+  const credit = customer.credits[0];
+  const won = customer.rewards.length;
+  const pending = customer.rewards.filter((reward) => reward.status === "PENDING").length;
+  return {
+    barcodeId: customer.barcodeId,
+    fullName: customer.fullName,
+    phone: customer.phone,
+    platform: customer.platform,
+    model: customer.model,
+    imei: customer.imei,
+    tagCurp: customer.tagCurp,
+    installmentAmount: credit?.installmentAmount ?? null,
+    racha: credit?.currentStreak ?? null,
+    abonosTotales: credit?._count.payments ?? null,
+    createdByName: customer.createdByName,
+    createdAt: customer.createdAt,
+    lastPaymentAt: credit?.payments[0]?.paymentDate ?? null,
+    creditStatus: credit?.status ?? null,
+    rewardsWon: won,
+    rewardsPending: pending,
+    rewardNames: customer.rewards.map((reward) => reward.rewardName).join("; "),
+  };
+}
+
 export function CustomerList({ customers }: { customers: Customer[] }) {
   const [query, setQuery] = useState("");
   const [target, setTarget] = useState<Customer | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const filtered = useMemo(() => {
     const needle = normalize(query.trim());
@@ -80,17 +108,51 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
     });
   }, [customers, query]);
 
+  const hasFilter = normalize(query.trim()).length > 0;
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await downloadRegistroExcel(filtered.map(toExportRow));
+      toast.success(
+        hasFilter
+          ? `Excel descargado (${filtered.length} filtrado(s))`
+          : `Excel descargado (${filtered.length} registro(s))`,
+      );
+    } catch {
+      toast.error("No se pudo generar el Excel. Intenta de nuevo.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-        <Input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Buscar por nombre, código, IMEI, TAG/CURP, sucursal…"
-          className="pl-9"
-          aria-label="Buscar clientes"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="relative max-w-md flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar por nombre, código, IMEI, TAG/CURP, sucursal…"
+            className="pl-9"
+            aria-label="Buscar en el registro"
+          />
+        </div>
+        <div className="flex flex-col items-start gap-1 sm:items-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExport}
+            disabled={exporting || filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            {exporting ? "Generando…" : "Exportar Excel"}
+          </Button>
+          <p className="max-w-xs text-xs text-muted">
+            Descarga lo visible: con búsqueda, solo filtrados; sin búsqueda, todo el registro.
+          </p>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-line bg-white shadow-sm">
@@ -106,7 +168,8 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
                 "IMEI",
                 "TAG/CURP",
                 "Abono",
-                "Abonos / racha",
+                "Racha",
+                "Abonos totales",
                 "Sucursal",
                 "",
               ].map((heading) => (
@@ -119,10 +182,10 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
           <tbody className="divide-y divide-line">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-3 py-10 text-center text-muted">
+                <td colSpan={12} className="px-3 py-10 text-center text-muted">
                   {customers.length === 0
-                    ? "Todavía no hay clientes."
-                    : "Ningún cliente coincide con la búsqueda."}
+                    ? "Todavía no hay registros."
+                    : "Ningún registro coincide con la búsqueda."}
                 </td>
               </tr>
             ) : null}
@@ -147,11 +210,8 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
                   <td className="px-3 py-3 font-mono text-xs">{customer.imei ?? "—"}</td>
                   <td className="px-3 py-3 font-mono text-xs">{customer.tagCurp ?? "—"}</td>
                   <td className="px-3 py-3">{credit ? formatMoney(credit.installmentAmount) : "—"}</td>
-                  <td className="px-3 py-3">
-                    {credit
-                      ? `${credit.paidInstallments}${credit.totalInstallments > 0 ? `/${credit.totalInstallments}` : ""} · racha ${credit.currentStreak}`
-                      : "—"}
-                  </td>
+                  <td className="px-3 py-3">{credit ? credit.currentStreak : "—"}</td>
+                  <td className="px-3 py-3">{credit ? credit._count.payments : "—"}</td>
                   <td className="px-3 py-3">{customer.createdByName ?? "—"}</td>
                   <td className="px-3 py-3">
                     <div className="flex gap-2">
@@ -182,7 +242,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
         </table>
       </div>
       <p className="text-xs text-muted">
-        Mostrando {filtered.length} de {customers.length} cliente(s).
+        Mostrando {filtered.length} de {customers.length} registro(s).
       </p>
 
       <DeleteDialog customer={target} onClose={() => setTarget(null)} />

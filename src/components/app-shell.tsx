@@ -24,7 +24,7 @@ const NAV: { href: string; label: string; icon: typeof Users; roles: Role[] }[] 
   { href: "/alta", label: "Alta", icon: UserPlus, roles: ["SUCURSAL", "ADMIN"] },
   { href: "/asistencia", label: "Recepción de abono", icon: ScanLine, roles: ["SUCURSAL", "ADMIN"] },
   { href: "/evidencias", label: "Evidencias", icon: Images, roles: ["SUCURSAL", "ADMIN"] },
-  { href: "/customers", label: "Clientes", icon: Users, roles: ["ADMIN"] },
+  { href: "/customers", label: "Registro", icon: Users, roles: ["ADMIN"] },
   { href: "/rewards", label: "Regalos", icon: Gift, roles: ["ADMIN"] },
   { href: "/usuarios", label: "Usuarios", icon: KeyRound, roles: ["ADMIN"] },
 ];

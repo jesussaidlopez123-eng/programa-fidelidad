@@ -13,9 +13,9 @@ export default async function CustomersPage() {
     <div className="mx-auto max-w-7xl space-y-8">
       <header>
         <p className="text-xs uppercase tracking-[0.25em] text-muted">Padrón</p>
-        <h1 className="font-display text-4xl font-semibold">Clientes</h1>
+        <h1 className="font-display text-4xl font-semibold">Registro</h1>
         <p className="mt-2 text-muted">
-          Todos los datos de cada cliente, con búsqueda y la sucursal que lo dio de alta. Para dar de alta a un cliente nuevo usa{" "}
+          Registro de clientes con búsqueda, sucursal de alta y exportación a Excel. Para dar de alta a un cliente nuevo usa{" "}
           <Link href="/alta" className="font-semibold text-brand hover:underline">
             Alta
           </Link>

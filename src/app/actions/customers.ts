@@ -16,9 +16,22 @@ export async function listCustomers() {
     include: {
       credits: {
         orderBy: { createdAt: "desc" },
-        include: { _count: { select: { payments: true } } },
+        include: {
+          _count: { select: { payments: true } },
+          payments: {
+            orderBy: { paymentDate: "desc" },
+            take: 1,
+            select: { paymentDate: true },
+          },
+        },
       },
-      rewards: true,
+      rewards: {
+        select: {
+          id: true,
+          rewardName: true,
+          status: true,
+        },
+      },
     },
   });
 }
