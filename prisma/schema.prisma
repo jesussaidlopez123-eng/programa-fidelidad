@@ -134,7 +134,27 @@ model AppSettings {
   graceDays  Int      @default(2)
   rewardEvery Int     @default(5)
   rewardName String   @default("Premio 5to Abono")
+  /// Siguiente número de secuencia para tarjetas impresas / códigos CRD-######.
+  nextCardSequence Int @default(1)
+  /// Fondo activo de las siluetas (JPG/PNG) para impresión de lotes.
+  cardBackgroundData     Bytes?
+  cardBackgroundMimeType String?
   updatedAt  DateTime @updatedAt
+}
+
+/// Historial de lotes de códigos de barras impresos (sin crear clientes).
+model CardPrintBatch {
+  id            String   @id @default(cuid())
+  fromNumber    Int
+  toNumber      Int
+  fromCode      String
+  toCode        String
+  quantity      Int
+  createdAt     DateTime @default(now())
+  createdByName String?
+
+  @@index([createdAt])
+  @@index([fromNumber, toNumber])
 }
 
 /// Configuración de los 3 regalos del programa (Regalo 1, 2 y 3).

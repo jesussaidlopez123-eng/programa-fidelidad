@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CreditCard,
   Gift,
   Images,
   KeyRound,
@@ -27,6 +28,7 @@ const NAV: { href: string; label: string; icon: typeof Users; roles: Role[] }[] 
   { href: "/rewards", label: "Regalos", icon: Gift, roles: ["ADMIN"] },
   { href: "/usuarios", label: "Usuarios", icon: KeyRound, roles: ["ADMIN"] },
   { href: "/alta", label: "Alta", icon: UserPlus, roles: ["SUCURSAL", "ADMIN"] },
+  { href: "/impresion-tarjetas", label: "Impresión de tarjetas", icon: CreditCard, roles: ["ADMIN"] },
 ];
 
 export function AppShell({

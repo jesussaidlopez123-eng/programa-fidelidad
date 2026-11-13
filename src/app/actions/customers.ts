@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { Prisma, type Platform } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/session";
+import { formatBarcode, parseBarcodeSequence } from "@/lib/barcode";
 import { normalizeBarcode } from "@/lib/utils";
 
 const MAX_BARCODE_LENGTH = 64;
@@ -202,17 +203,26 @@ export async function deleteCustomer(
 }
 
 async function nextBarcodeId() {
-  const customers = await prisma.customer.findMany({ select: { barcodeId: true } });
+  const [customers, settings] = await Promise.all([
+    prisma.customer.findMany({ select: { barcodeId: true } }),
+    prisma.appSettings.findUnique({
+      where: { id: "default" },
+      select: { nextCardSequence: true },
+    }),
+  ]);
   const used = new Set(customers.map((item) => item.barcodeId));
-  let sequence = customers.length + 1;
+  let maxUsed = 0;
+  for (const customer of customers) {
+    const sequence = parseBarcodeSequence(customer.barcodeId);
+    if (sequence != null && sequence > maxUsed) maxUsed = sequence;
+  }
+  // Respeta códigos ya reservados por lotes impresos (sin cliente aún).
+  const reservedNext = settings?.nextCardSequence ?? 1;
+  let sequence = Math.max(maxUsed + 1, reservedNext, 1);
   let candidate = formatBarcode(sequence);
   while (used.has(candidate)) {
     sequence += 1;
     candidate = formatBarcode(sequence);
   }
   return normalizeBarcode(candidate);
-}
-
-function formatBarcode(sequence: number) {
-  return `CRD-${String(sequence).padStart(6, "0")}`;
 }
