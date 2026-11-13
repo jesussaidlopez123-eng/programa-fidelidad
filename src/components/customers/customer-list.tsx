@@ -25,6 +25,7 @@ type Credit = {
   concept: string;
   installmentAmount: number;
   totalInstallments: number;
+  totalWeeks: number | null;
   paidInstallments: number;
   currentStreak: number;
   status: "ACTIVE" | "COMPLETED" | "DEFAULTED";
@@ -67,6 +68,7 @@ function toExportRow(customer: Customer): RegistroExportRow {
     imei: customer.imei,
     tagCurp: customer.tagCurp,
     installmentAmount: credit?.installmentAmount ?? null,
+    totalWeeks: credit?.totalWeeks ?? null,
     racha: credit?.currentStreak ?? null,
     abonosTotales: credit?._count.payments ?? null,
     createdByName: customer.createdByName,
@@ -100,6 +102,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
           customer.tagCurp,
           customer.createdByName,
           credit ? String(credit.installmentAmount) : "",
+          credit?.totalWeeks != null ? String(credit.totalWeeks) : "",
         ]
           .filter(Boolean)
           .join(" "),
@@ -156,7 +159,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-line bg-white shadow-sm">
-        <table className="w-full min-w-[1100px] text-left text-sm">
+        <table className="w-full min-w-[1180px] text-left text-sm">
           <thead className="bg-midnight text-xs uppercase tracking-wide text-white/85">
             <tr>
               {[
@@ -168,6 +171,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
                 "IMEI",
                 "TAG/CURP",
                 "Abono",
+                "Semanas totales",
                 "Racha",
                 "Abonos totales",
                 "Sucursal",
@@ -182,7 +186,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
           <tbody className="divide-y divide-line">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-3 py-10 text-center text-muted">
+                <td colSpan={13} className="px-3 py-10 text-center text-muted">
                   {customers.length === 0
                     ? "Todavía no hay registros."
                     : "Ningún registro coincide con la búsqueda."}
@@ -210,6 +214,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
                   <td className="px-3 py-3 font-mono text-xs">{customer.imei ?? "—"}</td>
                   <td className="px-3 py-3 font-mono text-xs">{customer.tagCurp ?? "—"}</td>
                   <td className="px-3 py-3">{credit ? formatMoney(credit.installmentAmount) : "—"}</td>
+                  <td className="px-3 py-3">{credit?.totalWeeks != null ? credit.totalWeeks : "—"}</td>
                   <td className="px-3 py-3">{credit ? credit.currentStreak : "—"}</td>
                   <td className="px-3 py-3">{credit ? credit._count.payments : "—"}</td>
                   <td className="px-3 py-3">{customer.createdByName ?? "—"}</td>

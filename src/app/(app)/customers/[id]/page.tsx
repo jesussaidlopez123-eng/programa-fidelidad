@@ -66,6 +66,10 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
             label="Monto de abono"
             value={credit ? formatMoney(credit.installmentAmount) : null}
           />
+          <Info
+            label="Semanas totales"
+            value={credit?.totalWeeks != null ? String(credit.totalWeeks) : null}
+          />
           <Info label="Alta por" value={customer.createdByName} />
           <Info
             label="Racha actual"

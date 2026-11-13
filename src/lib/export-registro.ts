@@ -9,6 +9,8 @@ export type RegistroExportRow = {
   imei: string | null;
   tagCurp: string | null;
   installmentAmount: number | null;
+  /** Plazo del crédito en semanas (null = sin dato / clientes antiguos). */
+  totalWeeks: number | null;
   /** Marcas actuales hacia el próximo regalo (currentStreak). */
   racha: number | null;
   /** Cantidad total de pagos/abonos registrados (no es la racha). */
@@ -31,6 +33,7 @@ const HEADERS = [
   "IMEI",
   "TAG/CURP",
   "Monto de abono",
+  "Semanas totales",
   "Racha",
   "Abonos totales",
   "Sucursal de alta",
@@ -66,6 +69,7 @@ function toSheetRow(row: RegistroExportRow): Record<(typeof HEADERS)[number], st
     IMEI: row.imei ?? "",
     "TAG/CURP": row.tagCurp ?? "",
     "Monto de abono": row.installmentAmount != null ? formatMoney(row.installmentAmount) : "",
+    "Semanas totales": row.totalWeeks ?? "",
     Racha: row.racha ?? "",
     "Abonos totales": row.abonosTotales ?? "",
     "Sucursal de alta": row.createdByName ?? "",

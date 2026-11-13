@@ -70,21 +70,21 @@ Módulo en el menú de **Sucursal** y **Administrador** (no es un ícono suelto 
 
 ## Registro (administrador)
 
-Menú **Registro** (ruta `/customers`, solo ADMIN). Tabla con código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, **Racha** y **Abonos totales** (columnas separadas) y la sucursal que dio de alta al cliente. El buscador filtra por cualquiera de esos campos.
+Menú **Registro** (ruta `/customers`, solo ADMIN). Tabla con código, nombre, número, plataforma, modelo, IMEI, TAG/CURP, monto de abono, **Semanas totales** (plazo del crédito; "—" si no hay), **Racha** y **Abonos totales** (columnas separadas) y la sucursal que dio de alta al cliente. El buscador filtra por cualquiera de esos campos.
 
-**Exportar Excel**: botón junto al buscador. Descarga `registro-clientes-YYYY-MM-DD.xlsx` (SheetJS/`xlsx`) con lo **visible**: si hay búsqueda, solo los filtrados; si no, todo el registro. Columnas: Código, Nombre, Número, Plataforma, Modelo, IMEI, TAG/CURP, Monto de abono, **Racha** (`currentStreak`), **Abonos totales** (cantidad de pagos registrados), Sucursal de alta, Fecha de alta, Último abono, Estado crédito, Regalos ganados / pendientes y nombres.
+**Exportar Excel**: botón junto al buscador. Descarga `registro-clientes-YYYY-MM-DD.xlsx` (SheetJS/`xlsx`) con lo **visible**: si hay búsqueda, solo los filtrados; si no, todo el registro. Columnas: Código, Nombre, Número, Plataforma, Modelo, IMEI, TAG/CURP, Monto de abono, **Semanas totales** (`Credit.totalWeeks`; vacío si no hay), **Racha** (`currentStreak`), **Abonos totales** (cantidad de pagos registrados), Sucursal de alta, Fecha de alta, Último abono, Estado crédito, Regalos ganados / pendientes y nombres.
 
-**Ficha del cliente** (`/customers/[id]`): datos, galería de fotos de premios e historial de regalos con fecha.
+**Ficha del cliente** (`/customers/[id]`): datos (incluye **Semanas totales** si hay), galería de fotos de premios e historial de regalos con fecha.
 
 **Eliminar cliente**: pide la contraseña del administrador en sesión (se verifica en el servidor con bcrypt). El diálogo indica cuántos créditos, abonos y regalos se eliminarán; es permanente.
 
 ## Alta de clientes
 
 1. **Escanear tarjeta nueva**: el campo grande tiene foco automático para el lector USB y hay un botón para escanear con la cámara. El código escaneado se guarda como el código de barras del cliente. Debe ser único. Como respaldo hay un enlace "generar código automático" (`CRD-000123`).
-2. **Datos del cliente**: Nombre, Número (teléfono), Plataforma (`PAYJOY` / `KREDIYA`), Modelo, IMEI, TAG/CURP y Monto de abono. Todos son obligatorios. Si el IMEI no tiene 15 dígitos se avisa y se pide confirmar.
-3. Al guardar se crea el cliente y su crédito (con el monto de abono, solo como registro) y la pantalla vuelve al escáner.
+2. **Datos del cliente**: Nombre, Número (teléfono), Plataforma (`PAYJOY` / `KREDIYA`), Modelo, IMEI, TAG/CURP, Monto de abono y **Semanas totales** (plazo del crédito, entero positivo). Todos son obligatorios. Si el IMEI no tiene 15 dígitos se avisa y se pide confirmar.
+3. Al guardar se crea el cliente y su crédito (monto de abono + `totalWeeks`; `totalInstallments` sigue en 0) y la pantalla vuelve al escáner.
 
-Las altas nuevas no tienen número fijo de abonos: el crédito queda abierto (`totalInstallments = 0`) y en **Recepción de abono** se sigue contando racha, abonos y regalos.
+Las altas nuevas no cierran el crédito por número de abonos (`totalInstallments = 0`); **Semanas totales** es solo el plazo informado. En **Recepción de abono** se sigue contando racha, abonos y regalos.
 
 ## Stack
 
