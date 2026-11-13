@@ -43,7 +43,7 @@ export type AttendanceLookup = {
   punctuality: {
     isOnTime: boolean;
     label: string;
-    dueDayOfMonth: number;
+    cycleDays: number;
     graceDays: number;
   };
 };
@@ -89,7 +89,6 @@ export async function lookupByBarcode(rawBarcode: string): Promise<
     customer.credits.find((item) => item.status === "ACTIVE") ?? customer.credits[0] ?? null;
 
   const settings = await loadSettings();
-  const punctuality = evaluatePunctuality(new Date(), settings);
   const activeGifts = await loadActiveGiftTiers();
   const streakTarget = credit
     ? nextGiftThreshold(credit.currentStreak, activeGifts)
@@ -102,6 +101,12 @@ export async function lookupByBarcode(rawBarcode: string): Promise<
         select: { paymentDate: true, receivedByName: true, isOnTime: true },
       })
     : null;
+
+  const punctuality = evaluatePunctuality(
+    new Date(),
+    { cycleDays: settings.cycleDays, graceDays: settings.graceDays },
+    last?.paymentDate ?? null,
+  );
 
   return {
     ok: true,
@@ -136,7 +141,7 @@ export async function lookupByBarcode(rawBarcode: string): Promise<
       punctuality: {
         isOnTime: punctuality.isOnTime,
         label: punctualityLabel(punctuality),
-        dueDayOfMonth: settings.dueDayOfMonth,
+        cycleDays: settings.cycleDays,
         graceDays: settings.graceDays,
       },
     },
@@ -153,15 +158,6 @@ export async function registerAttendance(input: {
 > {
   const user = await requireUser();
   const settings = await loadSettings();
-  const punctuality = evaluatePunctuality(new Date(), settings);
-
-  if (!punctuality.isOnTime && !input.lateDecision) {
-    return {
-      ok: false,
-      error: "El abono es tardío. Elige si conservas o reinicias la racha.",
-      needsLateDecision: true,
-    };
-  }
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -182,6 +178,26 @@ export async function registerAttendance(input: {
       // totalInstallments = 0 significa crédito sin límite de abonos (altas nuevas).
       if (credit.totalInstallments > 0 && credit.paidInstallments >= credit.totalInstallments) {
         throw new Error("Este crédito ya cubrió todos sus abonos.");
+      }
+
+      const lastPayment = await tx.payment.findFirst({
+        where: { creditId: credit.id },
+        orderBy: { paymentDate: "desc" },
+        select: { paymentDate: true },
+      });
+
+      const punctuality = evaluatePunctuality(
+        new Date(),
+        { cycleDays: settings.cycleDays, graceDays: settings.graceDays },
+        lastPayment?.paymentDate ?? null,
+      );
+
+      if (!punctuality.isOnTime && !input.lateDecision) {
+        return {
+          ok: false as const,
+          needsLateDecision: true as const,
+          error: "El abono es tardío. Elige si conservas o reinicias la racha.",
+        };
       }
 
       if (!input.allowDuplicateToday) {
@@ -301,6 +317,10 @@ export async function registerAttendance(input: {
         },
       };
     });
+
+    if (!result.ok) {
+      return result;
+    }
 
     revalidatePath("/");
     revalidatePath("/asistencia");

@@ -343,8 +343,9 @@ export function AttendanceStation() {
               {step === "late" ? (
                 <div className="space-y-4">
                   <p className="text-sm text-ink/75">
-                    <strong>Abono tardío.</strong> Según el día de corte y los días de gracia, este
-                    abono es tardío y la racha no suma. Elige si la conservas o la reinicias.
+                    <strong>Abono tardío.</strong> Se pasó la ventana desde el último abono (días del
+                    ciclo + gracia). La racha no suma. Elige si la conservas o la reinicias; al
+                    registrar, esta fecha será el nuevo ancla del ciclo.
                   </p>
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button

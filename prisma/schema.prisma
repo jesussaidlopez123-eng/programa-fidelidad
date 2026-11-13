@@ -128,12 +128,13 @@ model Payment {
 }
 
 model AppSettings {
-  id            String   @id @default("default")
-  dueDayOfMonth Int      @default(15)
-  graceDays     Int      @default(3)
-  rewardEvery   Int      @default(5)
-  rewardName    String   @default("Premio 5to Abono")
-  updatedAt     DateTime @updatedAt
+  id         String   @id @default("default")
+  /// Días del ciclo desde el abono de referencia hasta el vencimiento (antes de gracia).
+  cycleDays  Int      @default(7)
+  graceDays  Int      @default(2)
+  rewardEvery Int     @default(5)
+  rewardName String   @default("Premio 5to Abono")
+  updatedAt  DateTime @updatedAt
 }
 
 /// Configuración de los 3 regalos del programa (Regalo 1, 2 y 3).

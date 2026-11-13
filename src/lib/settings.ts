@@ -7,8 +7,8 @@ export async function loadSettings() {
     update: {},
     create: {
       id: "default",
-      dueDayOfMonth: 15,
-      graceDays: 3,
+      cycleDays: 7,
+      graceDays: 2,
       rewardEvery: 5,
       rewardName: "Regalo 1",
     },

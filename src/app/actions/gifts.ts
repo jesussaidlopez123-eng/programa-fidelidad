@@ -99,8 +99,8 @@ export async function saveGiftTiers(tiers: GiftTierInput[]) {
       update: { rewardEvery: first.marksRequired, rewardName: giftDisplayName(first) },
       create: {
         id: "default",
-        dueDayOfMonth: 15,
-        graceDays: 3,
+        cycleDays: 7,
+        graceDays: 2,
         rewardEvery: first.marksRequired,
         rewardName: giftDisplayName(first),
       },

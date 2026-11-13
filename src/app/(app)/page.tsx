@@ -118,8 +118,8 @@ export default async function DashboardPage() {
       </section>
 
       <SettingsCard
-        dueDayOfMonth={data.settings?.dueDayOfMonth ?? 15}
-        graceDays={data.settings?.graceDays ?? 3}
+        cycleDays={data.settings?.cycleDays ?? 7}
+        graceDays={data.settings?.graceDays ?? 2}
       />
     </div>
   );

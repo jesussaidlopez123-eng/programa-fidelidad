@@ -23,15 +23,29 @@ function zoneParts(date: Date, timeZone: string) {
   };
 }
 
-export function startOfBusinessDay(now = new Date()): Date {
-  let timeZone = BUSINESS_TZ;
+function resolveBusinessTimeZone(): string {
   try {
-    zoneParts(now, timeZone);
+    zoneParts(new Date(), BUSINESS_TZ);
+    return BUSINESS_TZ;
   } catch {
-    timeZone = "America/Hermosillo";
+    return "America/Hermosillo";
   }
+}
+
+export function startOfBusinessDay(now = new Date()): Date {
+  const timeZone = resolveBusinessTimeZone();
   const p = zoneParts(now, timeZone);
   const asUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
   const offsetMs = asUtc - Math.floor(now.getTime() / 1000) * 1000;
   return new Date(Date.UTC(p.year, p.month - 1, p.day) - offsetMs);
+}
+
+/** Suma días de calendario en la zona del negocio y devuelve el inicio de ese día. */
+export function addBusinessCalendarDays(date: Date, days: number): Date {
+  const timeZone = resolveBusinessTimeZone();
+  const p = zoneParts(date, timeZone);
+  // Mediodía UTC evita ambigüedad al cruzar DST (Hermosillo no tiene DST, pero el helper es genérico).
+  const noonUtc = new Date(Date.UTC(p.year, p.month - 1, p.day, 12, 0, 0));
+  noonUtc.setUTCDate(noonUtc.getUTCDate() + days);
+  return startOfBusinessDay(noonUtc);
 }
