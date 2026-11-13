@@ -12,15 +12,15 @@ export async function getSettings() {
 
 export async function updateSettings(formData: FormData) {
   await requireUser(["ADMIN"]);
-  const dueDayOfMonth = clampInt(formData.get("dueDayOfMonth"), 1, 31, 15);
-  const graceDays = clampInt(formData.get("graceDays"), 0, 30, 3);
+  const cycleDays = clampInt(formData.get("cycleDays"), 1, 60, 7);
+  const graceDays = clampInt(formData.get("graceDays"), 0, 30, 2);
 
   await prisma.appSettings.upsert({
     where: { id: "default" },
-    update: { dueDayOfMonth, graceDays },
+    update: { cycleDays, graceDays },
     create: {
       id: "default",
-      dueDayOfMonth,
+      cycleDays,
       graceDays,
       rewardEvery: 5,
       rewardName: "Regalo 1",

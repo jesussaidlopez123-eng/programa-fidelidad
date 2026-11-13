@@ -1,6 +1,6 @@
 # Fidelidad — Control de asistencia de abonos
 
-Programa de fidelidad para una casa de crédito. Cada cliente tiene una tarjeta con código de barras (el que se escanea al darlo de alta, por ejemplo `CRD-000123`). Al registrar la **asistencia del abono** se marca puntual o tardío según el día de corte y los días de gracia. Los **regalos** se configuran por número de marcas puntuales (por defecto Regalo 1 = 5, Regalo 2 = 10, Regalo 3 = 15).
+Programa de fidelidad para una casa de crédito. Cada cliente tiene una tarjeta con código de barras (el que se escanea al darlo de alta, por ejemplo `CRD-000123`). Al registrar la **asistencia del abono** se marca puntual o tardío según el **ciclo desde el último abono** (días del ciclo + días de gracia; por defecto 7+2). Los **regalos** se configuran por número de marcas puntuales (por defecto Regalo 1 = 5, Regalo 2 = 10, Regalo 3 = 15).
 
 Esta herramienta **no es una caja**: no cobra, no muestra totales recaudados ni actualiza un saldo en pantalla. Solo controla si el cliente cumplió su abono.
 
@@ -205,4 +205,4 @@ Casi siempre es la base de datos, no el código. Las migraciones se aplican sola
 3. Al alcanzar las marcas de un regalo activo: modal **¡EL CLIENTE GANÓ!**, se crea un `Reward` y puedes subir la foto o dejarla para **Evidencias**.
 4. Tras el regalo con más marcas, la racha vuelve a 0.
 5. Un abono **tardío** no suma; eliges conservar la racha o reiniciarla a 0.
-6. Puntual vs tardío se calcula con el día de corte y los días de gracia (editables en el Dashboard). Los regalos se editan en `/rewards`.
+6. Puntual vs tardío: desde cada abono el cliente tiene **días del ciclo + días de gracia** (editables en el Dashboard; default 7+2). Si abona a tiempo, la racha suma y esa fecha es el nuevo ancla; si se pasa, es tardío (conservar o reiniciar racha) y el siguiente abono vuelve a fijar el ancla. El primer abono de un crédito siempre es puntual. Los regalos se editan en `/rewards`.

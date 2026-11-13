@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:setup": "prisma migrate deploy && prisma db seed",
     "build:local": "prisma generate && next build",
+    "test": "tsx --test src/lib/punctuality.test.ts",
     "test:e2e": "playwright test",
     "postinstall": "prisma generate"
   },

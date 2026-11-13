@@ -5,10 +5,10 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
 export function SettingsCard({
-  dueDayOfMonth,
+  cycleDays,
   graceDays,
 }: {
-  dueDayOfMonth: number;
+  cycleDays: number;
   graceDays: number;
 }) {
   return (
@@ -18,8 +18,9 @@ export function SettingsCard({
     >
       <h2 className="font-display text-2xl font-semibold">Reglas de puntualidad</h2>
       <p className="mb-4 mt-1 text-sm text-muted">
-        Un abono es puntual si se registra el día de corte o durante los días de gracia. Los regalos
-        por número de marcas se configuran en{" "}
+        Desde cada abono, el cliente tiene los días del ciclo más los de gracia para el siguiente.
+        Si llega a tiempo, la racha suma y esa fecha es el nuevo ancla. Los regalos por número de
+        marcas se configuran en{" "}
         <Link href="/rewards" className="font-semibold text-brand hover:underline">
           Regalos
         </Link>
@@ -27,15 +28,16 @@ export function SettingsCard({
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="dueDayOfMonth">Día de corte</Label>
+          <Label htmlFor="cycleDays">Días del ciclo</Label>
           <Input
-            id="dueDayOfMonth"
-            name="dueDayOfMonth"
+            id="cycleDays"
+            name="cycleDays"
             type="number"
             min={1}
-            max={31}
-            defaultValue={dueDayOfMonth}
+            max={60}
+            defaultValue={cycleDays}
           />
+          <p className="text-xs text-muted">Por defecto 7 (una semana desde el abono).</p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="graceDays">Días de gracia</Label>
@@ -47,6 +49,9 @@ export function SettingsCard({
             max={30}
             defaultValue={graceDays}
           />
+          <p className="text-xs text-muted">
+            Por defecto 2. Ventana total: {cycleDays}+{graceDays} días desde el abono.
+          </p>
         </div>
       </div>
       <div className="mt-4">
