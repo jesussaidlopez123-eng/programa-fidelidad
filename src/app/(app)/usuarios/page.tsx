@@ -11,9 +11,9 @@ export default async function UsuariosPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header>
-        <p className="text-xs uppercase tracking-[0.25em] text-teal">Administración</p>
-        <h1 className="font-display text-4xl">Usuarios</h1>
-        <p className="mt-2 text-ink/65">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted">Administración</p>
+        <h1 className="font-display text-4xl font-semibold">Usuarios</h1>
+        <p className="mt-2 text-muted">
           Cada sucursal entra con su propio usuario. Las sucursales solo ven Alta y Recepción de
           abono; los administradores ven todo.
         </p>

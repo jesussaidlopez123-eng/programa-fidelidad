@@ -16,7 +16,7 @@ const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm", className)}
+    className={cn("fixed inset-0 z-50 bg-midnight/50 backdrop-blur-sm", className)}
     {...props}
   />
 ));
@@ -31,13 +31,13 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 w-[calc(100%-1.5rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-line bg-cream p-6 shadow-2xl",
+        "fixed left-1/2 top-1/2 z-50 w-[calc(100%-1.5rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-white p-6 shadow-2xl",
         className,
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 text-ink/50 hover:bg-white">
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-lg p-1 text-muted hover:bg-page hover:text-ink">
         <X className="h-4 w-4" />
         <span className="sr-only">Cerrar</span>
       </DialogPrimitive.Close>
@@ -56,7 +56,7 @@ function DialogTitle({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn("font-display text-2xl text-ink", className)}
+      className={cn("font-display text-2xl font-semibold text-ink", className)}
       {...props}
     />
   );
@@ -67,7 +67,7 @@ function DialogDescription({
   ...props
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>) {
   return (
-    <DialogPrimitive.Description className={cn("text-sm text-ink/70", className)} {...props} />
+    <DialogPrimitive.Description className={cn("text-sm text-muted", className)} {...props} />
   );
 }
 

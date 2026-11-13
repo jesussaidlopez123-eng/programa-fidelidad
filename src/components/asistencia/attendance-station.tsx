@@ -136,13 +136,13 @@ export function AttendanceStation() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <form onSubmit={onScanSubmit} className="rounded-3xl border border-line bg-white/80 p-5 shadow-sm">
+      <form onSubmit={onScanSubmit} className="rounded-xl border border-line bg-white/80 p-5 shadow-sm">
         <label htmlFor="scan" className="mb-2 block text-sm font-medium text-ink/70">
           Lector USB o código manual
         </label>
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
-            <ScanLine className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-teal" />
+            <ScanLine className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-brand" />
             <Input
               id="scan"
               ref={inputRef}
@@ -162,13 +162,13 @@ export function AttendanceStation() {
           <WebcamScanner onScan={(value) => void runLookup(value)} />
         </div>
         {error ? (
-          <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <p role="alert" className="mt-3 rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">
             {error}
           </p>
         ) : null}
       </form>
 
-      <p className="text-center text-sm text-ink/50">
+      <p className="text-center text-sm text-muted">
         Apunta el lector al código de la tarjeta. Se abrirá la ficha del cliente para marcar el pago.
       </p>
 
@@ -190,7 +190,7 @@ export function AttendanceStation() {
               <DialogHeader>
                 <DialogTitle>{lookup.customer.fullName}</DialogTitle>
                 <DialogDescription>
-                  <span className="font-mono text-teal">{lookup.customer.barcodeId}</span>
+                  <span className="font-mono text-brand">{lookup.customer.barcodeId}</span>
                   {" · "}
                   {lookup.punctuality.label}
                 </DialogDescription>
@@ -388,7 +388,7 @@ export function AttendanceStation() {
 function Info({ label, value, mono }: { label: string; value: string | null | undefined; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-[11px] uppercase tracking-wide text-ink/45">{label}</dt>
+      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
       <dd className={mono ? "break-all font-mono text-xs" : "font-medium"}>{value || "—"}</dd>
     </div>
   );

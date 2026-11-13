@@ -20,7 +20,7 @@ export type EvidenceCard = {
 export function EvidenciasBoard({ items }: { items: EvidenceCard[] }) {
   if (items.length === 0) {
     return (
-      <p className="rounded-3xl border border-dashed border-line bg-white/60 px-5 py-12 text-center text-sm text-ink/55">
+      <p className="rounded-xl border border-dashed border-line bg-white px-5 py-12 text-center text-sm text-muted">
         No hay premios del día pendientes de foto. Cuando un cliente gane y se elija «Subir después»,
         aparecerá aquí.
       </p>
@@ -85,20 +85,20 @@ function EvidenceItem({ item }: { item: EvidenceCard }) {
   }
 
   return (
-    <article className="rounded-3xl border border-line bg-white p-5 shadow-sm">
+    <article className="rounded-xl border border-line bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-teal">Premio del día</p>
-          <h2 className="font-display text-2xl">{item.customer.fullName}</h2>
-          <p className="font-mono text-xs text-teal">{item.customer.barcodeId}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-muted">Premio del día</p>
+          <h2 className="font-display text-2xl font-semibold">{item.customer.fullName}</h2>
+          <p className="font-mono text-xs text-brand">{item.customer.barcodeId}</p>
         </div>
-        <div className="text-right text-xs text-ink/55">
+        <div className="text-right text-xs text-muted">
           <p>{formatDate(item.unlockedAt)}</p>
           {item.unlockedByName ? <p>Sucursal: {item.unlockedByName}</p> : null}
         </div>
       </div>
 
-      <p className="mt-3 rounded-2xl bg-cream px-3 py-2 text-sm font-medium">{item.rewardName}</p>
+      <p className="mt-3 rounded-2xl bg-page px-3 py-2 text-sm font-medium">{item.rewardName}</p>
 
       {preview ? (
         // eslint-disable-next-line @next/next/no-img-element

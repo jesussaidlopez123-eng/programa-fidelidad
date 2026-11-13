@@ -72,7 +72,7 @@ export function WebcamScanner({ onScan }: { onScan: (value: string) => void }) {
           <div id={regionId} className="min-h-[180px] overflow-hidden rounded-xl bg-black" />
         </div>
       ) : null}
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
     </div>
   );
 }

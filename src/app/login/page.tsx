@@ -16,11 +16,11 @@ export default async function LoginPage() {
   if (user) redirect(ROLE_HOME[user.role]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-cream px-4 py-10">
-      <div className="w-full max-w-sm space-y-6 rounded-3xl border border-line bg-white p-8 shadow-sm">
+    <main className="flex min-h-screen items-center justify-center bg-page px-4 py-10">
+      <div className="w-full max-w-sm space-y-6 rounded-xl border border-line bg-white p-8 shadow-sm">
         <header className="text-center">
-          <p className="font-display text-3xl text-forest">Fidelidad</p>
-          <p className="mt-1 text-xs uppercase tracking-[0.22em] text-ink/50">Control de abonos</p>
+          <p className="font-display text-3xl font-semibold text-brand">Fidelidad</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.22em] text-muted">Control de abonos</p>
         </header>
         <LoginForm />
       </div>

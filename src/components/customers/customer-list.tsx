@@ -83,7 +83,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
   return (
     <div className="space-y-4">
       <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -93,9 +93,9 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
         />
       </div>
 
-      <div className="overflow-x-auto rounded-3xl border border-line bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-line bg-white shadow-sm">
         <table className="w-full min-w-[1100px] text-left text-sm">
-          <thead className="border-b border-line bg-cream/60 text-xs uppercase tracking-wide text-ink/55">
+          <thead className="bg-midnight text-xs uppercase tracking-wide text-white/85">
             <tr>
               {[
                 "Código",
@@ -119,7 +119,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
           <tbody className="divide-y divide-line">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-3 py-10 text-center text-ink/55">
+                <td colSpan={11} className="px-3 py-10 text-center text-muted">
                   {customers.length === 0
                     ? "Todavía no hay clientes."
                     : "Ningún cliente coincide con la búsqueda."}
@@ -131,9 +131,9 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
               const pending = customer.rewards.filter((reward) => reward.status === "PENDING").length;
               return (
                 <tr key={customer.id} className="align-top">
-                  <td className="px-3 py-3 font-mono text-xs text-teal">{customer.barcodeId}</td>
+                  <td className="px-3 py-3 font-mono text-xs text-brand">{customer.barcodeId}</td>
                   <td className="px-3 py-3 font-semibold">
-                    <Link href={`/customers/${customer.id}`} className="hover:text-teal hover:underline">
+                    <Link href={`/customers/${customer.id}`} className="hover:text-brand hover:underline">
                       {customer.fullName}
                     </Link>
                     <div className="mt-1 flex flex-wrap gap-1">
@@ -181,7 +181,7 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-ink/50">
+      <p className="text-xs text-muted">
         Mostrando {filtered.length} de {customers.length} cliente(s).
       </p>
 
@@ -238,7 +238,7 @@ function DeleteDialog({ customer, onClose }: { customer: Customer | null; onClos
             }
           }}
         >
-          <div className="rounded-2xl bg-rose-50 p-4 text-sm text-rose-800">
+          <div className="rounded-2xl bg-danger-soft p-4 text-sm text-danger">
             <p className="font-semibold">Esta acción no se puede deshacer.</p>
             <p className="mt-1">
               También se eliminarán de forma permanente sus datos relacionados: {credits} crédito(s),{" "}
@@ -258,7 +258,7 @@ function DeleteDialog({ customer, onClose }: { customer: Customer | null; onClos
             />
           </div>
           {error ? (
-            <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <p role="alert" className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">
               {error}
             </p>
           ) : null}

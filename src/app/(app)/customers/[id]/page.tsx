@@ -45,16 +45,16 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <header className="space-y-2">
-        <Link href="/customers" className="text-sm font-semibold text-teal hover:underline">
+        <Link href="/customers" className="text-sm font-semibold text-brand hover:underline">
           ← Volver a clientes
         </Link>
-        <p className="text-xs uppercase tracking-[0.25em] text-teal">Ficha</p>
-        <h1 className="font-display text-4xl">{customer.fullName}</h1>
-        <p className="font-mono text-sm text-teal">{customer.barcodeId}</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-muted">Ficha</p>
+        <h1 className="font-display text-4xl font-semibold">{customer.fullName}</h1>
+        <p className="font-mono text-sm text-brand">{customer.barcodeId}</p>
       </header>
 
-      <section className="rounded-3xl border border-line bg-white p-5 shadow-sm">
-        <h2 className="font-display text-2xl">Datos</h2>
+      <section className="rounded-xl border border-line bg-white p-5 shadow-sm">
+        <h2 className="font-display text-2xl font-semibold">Datos</h2>
         <dl className="mt-4 grid gap-3 sm:grid-cols-2">
           <Info label="Número" value={customer.phone} />
           <Info label="Correo" value={customer.email} />
@@ -90,17 +90,17 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
 
       <section className="space-y-4">
         <div>
-          <h2 className="font-display text-2xl">Fotos de premios</h2>
-          <p className="text-sm text-ink/60">Evidencias subidas al ganar un regalo.</p>
+          <h2 className="font-display text-2xl font-semibold">Fotos de premios</h2>
+          <p className="text-sm text-muted">Evidencias subidas al ganar un regalo.</p>
         </div>
         {photos.length === 0 ? (
-          <p className="rounded-3xl border border-dashed border-line bg-white/60 px-5 py-8 text-center text-sm text-ink/55">
+          <p className="rounded-xl border border-dashed border-line bg-white px-5 py-8 text-center text-sm text-muted">
             Todavía no hay fotos de premios para este cliente.
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {photos.map((reward) => (
-              <figure key={reward.id} className="overflow-hidden rounded-3xl border border-line bg-white shadow-sm">
+              <figure key={reward.id} className="overflow-hidden rounded-xl border border-line bg-white shadow-sm">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`/api/rewards/${reward.id}/photo`}
@@ -109,7 +109,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                 />
                 <figcaption className="space-y-1 p-3 text-sm">
                   <p className="font-semibold">{reward.rewardName}</p>
-                  <p className="text-xs text-ink/55">{formatDate(reward.unlockedAt)}</p>
+                  <p className="text-xs text-muted">{formatDate(reward.unlockedAt)}</p>
                 </figcaption>
               </figure>
             ))}
@@ -119,17 +119,17 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
 
       <section className="space-y-4">
         <div>
-          <h2 className="font-display text-2xl">Historial de regalos</h2>
-          <p className="text-sm text-ink/60">Todos los premios desbloqueados, con fecha.</p>
+          <h2 className="font-display text-2xl font-semibold">Historial de regalos</h2>
+          <p className="text-sm text-muted">Todos los premios desbloqueados, con fecha.</p>
         </div>
         {customer.rewards.length === 0 ? (
-          <p className="rounded-3xl border border-dashed border-line bg-white/60 px-5 py-8 text-center text-sm text-ink/55">
+          <p className="rounded-xl border border-dashed border-line bg-white px-5 py-8 text-center text-sm text-muted">
             Este cliente aún no ha ganado regalos.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-3xl border border-line bg-white shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-line bg-white shadow-sm">
             <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="bg-cream text-ink/60">
+              <thead className="bg-midnight text-white/85">
                 <tr>
                   <th className="px-4 py-3 font-medium">Fecha</th>
                   <th className="px-4 py-3 font-medium">Regalo</th>
@@ -144,7 +144,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                     <td className="px-4 py-3">
                       <p className="font-medium">{reward.rewardName}</p>
                       {reward.marksRequired ? (
-                        <p className="text-xs text-ink/50">{reward.marksRequired} marcas</p>
+                        <p className="text-xs text-muted">{reward.marksRequired} marcas</p>
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
@@ -156,7 +156,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                           className="h-12 w-12 rounded-lg object-cover"
                         />
                       ) : (
-                        <span className="text-xs text-ink/45">Pendiente</span>
+                        <span className="text-xs text-muted">Pendiente</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -188,7 +188,7 @@ function Info({
 }) {
   return (
     <div>
-      <dt className="text-[11px] uppercase tracking-wide text-ink/45">{label}</dt>
+      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
       <dd className={mono ? "break-all font-mono text-xs" : "font-medium"}>{value || "—"}</dd>
     </div>
   );

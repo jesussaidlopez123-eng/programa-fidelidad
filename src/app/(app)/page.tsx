@@ -15,9 +15,9 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <header>
-        <p className="text-xs uppercase tracking-[0.25em] text-teal">Hoy</p>
-        <h1 className="font-display text-4xl text-ink">Panel de fidelidad</h1>
-        <p className="mt-2 max-w-2xl text-ink/65">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted">Hoy</p>
+        <h1 className="font-display text-4xl font-semibold text-ink">Panel de fidelidad</h1>
+        <p className="mt-2 max-w-2xl text-muted">
           Control de asistencia de abonos. Sin caja ni cobro: solo puntualidad, racha y premios.
         </p>
       </header>
@@ -51,15 +51,15 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-3xl border border-line bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-line bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-2xl">A un sello del premio</h2>
-            <Link href="/asistencia" className="text-sm font-semibold text-teal hover:underline">
+            <h2 className="font-display text-2xl font-semibold">A un sello del premio</h2>
+            <Link href="/asistencia" className="text-sm font-semibold text-brand hover:underline">
               Ir a asistencia
             </Link>
           </div>
           {data.streakNear.length === 0 ? (
-            <p className="text-sm text-ink/55">
+            <p className="text-sm text-muted">
               Nadie está en racha {data.almostThere} ahora mismo.
             </p>
           ) : (
@@ -67,11 +67,11 @@ export default async function DashboardPage() {
               {data.streakNear.map((credit) => (
                 <li
                   key={credit.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-cream px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-page px-4 py-3"
                 >
                   <div>
                     <p className="font-semibold">{credit.customer.fullName}</p>
-                    <p className="font-mono text-xs text-teal">{credit.customer.barcodeId}</p>
+                    <p className="font-mono text-xs text-brand">{credit.customer.barcodeId}</p>
                   </div>
                   <Badge tone="gold">
                     Racha {credit.currentStreak}/{credit.target}
@@ -82,27 +82,27 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        <div className="rounded-3xl border border-line bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-line bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-2xl">Asistencias de hoy</h2>
-            <Link href="/evidencias" className="text-sm font-semibold text-teal hover:underline">
+            <h2 className="font-display text-2xl font-semibold">Asistencias de hoy</h2>
+            <Link href="/evidencias" className="text-sm font-semibold text-brand hover:underline">
               Evidencias
             </Link>
           </div>
           {data.recentAttendances.length === 0 ? (
-            <p className="text-sm text-ink/55">Todavía no hay registros hoy.</p>
+            <p className="text-sm text-muted">Todavía no hay registros hoy.</p>
           ) : (
             <ul className="space-y-3">
               {data.recentAttendances.map((payment) => (
                 <li key={payment.id} className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium">{payment.credit.customer.fullName}</p>
-                    <p className="text-xs text-ink/55">
+                    <p className="text-xs text-muted">
                       {payment.notes}
                       {payment.receivedByName ? ` · Recibió: ${payment.receivedByName}` : ""}
                     </p>
                   </div>
-                  <div className="text-right text-xs text-ink/50">
+                  <div className="text-right text-xs text-muted">
                     <p>{formatDate(payment.paymentDate)}</p>
                     {payment.isOnTime ? (
                       <Badge tone="teal">Puntual</Badge>
@@ -135,10 +135,10 @@ function Kpi({
   value: string;
 }) {
   return (
-    <article className="rounded-3xl border border-line bg-white p-5 shadow-sm">
-      <div className="mb-3 inline-flex rounded-full bg-cream p-2 text-teal">{icon}</div>
-      <p className="text-sm text-ink/55">{label}</p>
-      <p className="font-display text-4xl">{value}</p>
+    <article className="rounded-xl border border-line bg-white p-5 shadow-sm">
+      <div className="mb-3 inline-flex rounded-xl bg-brand/10 p-2 text-brand">{icon}</div>
+      <p className="text-sm text-muted">{label}</p>
+      <p className="font-display text-4xl font-semibold">{value}</p>
     </article>
   );
 }

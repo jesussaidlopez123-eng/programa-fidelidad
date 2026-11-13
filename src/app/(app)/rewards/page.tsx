@@ -23,9 +23,9 @@ export default async function RewardsPage({
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <header>
-        <p className="text-xs uppercase tracking-[0.25em] text-teal">Programa</p>
-        <h1 className="font-display text-4xl">Regalos</h1>
-        <p className="mt-2 text-ink/65">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted">Programa</p>
+        <h1 className="font-display text-4xl font-semibold">Regalos</h1>
+        <p className="mt-2 text-muted">
           Configura hasta tres regalos por número de marcas puntuales y entrega los premios ganados.
         </p>
       </header>
@@ -42,8 +42,8 @@ export default async function RewardsPage({
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-2xl">Premios ganados</h2>
-            <p className="text-sm text-ink/60">Miniatura de la foto y estado de entrega.</p>
+            <h2 className="font-display text-2xl font-semibold">Premios ganados</h2>
+            <p className="text-sm text-muted">Miniatura de la foto y estado de entrega.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Filter href="/rewards" active={!status}>
@@ -76,8 +76,8 @@ function Filter({
     <Link
       href={href}
       className={cn(
-        "rounded-full px-4 py-2 text-sm font-semibold",
-        active ? "bg-forest text-cream" : "bg-white text-ink/70 ring-1 ring-line",
+        "rounded-xl px-4 py-2 text-sm font-semibold",
+        active ? "bg-brand text-white" : "bg-white text-ink/70 ring-1 ring-line",
       )}
     >
       {children}

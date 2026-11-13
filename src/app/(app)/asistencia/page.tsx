@@ -8,9 +8,9 @@ export default async function AsistenciaPage() {
   return (
     <div className="space-y-6">
       <header className="mx-auto max-w-3xl">
-        <p className="text-xs uppercase tracking-[0.25em] text-teal">Estación de sellos</p>
-        <h1 className="font-display text-4xl">Recepción de abono</h1>
-        <p className="mt-2 text-ink/65">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted">Estación de sellos</p>
+        <h1 className="font-display text-4xl font-semibold">Recepción de abono</h1>
+        <p className="mt-2 text-muted">
           Escanea la tarjeta. El sistema marca puntual o tardío según el día de corte. Al alcanzar
           las marcas de un regalo configurado se desbloquea el premio.
         </p>

@@ -10,15 +10,15 @@ export function Badge({
   children: React.ReactNode;
 }) {
   const tones = {
-    teal: "bg-teal/10 text-teal-deep",
-    gold: "bg-gold/20 text-ink",
-    rose: "bg-rose-100 text-rose-800",
-    slate: "bg-black/5 text-ink/70",
+    teal: "bg-success-soft text-success",
+    gold: "bg-brand/10 text-brand",
+    rose: "bg-danger-soft text-danger",
+    slate: "bg-page text-muted",
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide",
+        "inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-semibold tracking-wide",
         tones[tone],
         className,
       )}

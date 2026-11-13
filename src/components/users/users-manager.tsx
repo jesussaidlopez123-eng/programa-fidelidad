@@ -51,7 +51,7 @@ export function UsersManager({ users, currentUserId }: { users: UserRow[]; curre
   return (
     <div className="space-y-6">
       <form
-        className="grid gap-4 rounded-3xl border border-line bg-white p-5 shadow-sm md:grid-cols-[1fr_1fr_auto_auto]"
+        className="grid gap-4 rounded-xl border border-line bg-white p-5 shadow-sm md:grid-cols-[1fr_1fr_auto_auto]"
         action={async (formData) => {
           setAdding(true);
           const ok = await run(() => createUser(formData), "Usuario agregado");
@@ -60,7 +60,7 @@ export function UsersManager({ users, currentUserId }: { users: UserRow[]; curre
         }}
         id="new-user-form"
       >
-        <h2 className="font-display text-2xl md:col-span-4">Agregar usuario</h2>
+        <h2 className="font-display text-2xl font-semibold md:col-span-4">Agregar usuario</h2>
         <div className="space-y-1.5">
           <Label htmlFor="new-name">Nombre de usuario</Label>
           <Input id="new-name" name="name" required placeholder="Ej. MERCADO 3" />
@@ -93,7 +93,7 @@ export function UsersManager({ users, currentUserId }: { users: UserRow[]; curre
           const isSelf = user.id === currentUserId;
           const isEditing = editing?.id === user.id ? editing.mode : null;
           return (
-            <li key={user.id} className="rounded-3xl border border-line bg-white p-4 shadow-sm">
+            <li key={user.id} className="rounded-xl border border-line bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-lg font-semibold">{user.name}</span>

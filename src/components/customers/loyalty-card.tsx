@@ -13,14 +13,14 @@ export function LoyaltyCard({
   currentStreak?: number;
 }) {
   return (
-    <div className="loyalty-card mx-auto overflow-hidden rounded-2xl border border-line bg-cream text-ink shadow-md">
+    <div className="loyalty-card mx-auto overflow-hidden rounded-xl border border-line bg-white text-ink shadow-md">
       <div className="flex h-full flex-col justify-between p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-teal">Fidelidad</p>
-            <h3 className="font-display text-xl leading-tight">{fullName}</h3>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-muted">Fidelidad</p>
+            <h3 className="font-display text-xl font-semibold leading-tight">{fullName}</h3>
           </div>
-          <span className="rounded-full bg-gold px-2 py-1 text-[10px] font-bold uppercase tracking-wide">
+          <span className="rounded-lg bg-brand px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
             Programa
           </span>
         </div>

@@ -14,13 +14,13 @@ export function SettingsCard({
   return (
     <form
       action={updateSettings}
-      className="rounded-3xl border border-line bg-white p-5 shadow-sm"
+      className="rounded-xl border border-line bg-white p-5 shadow-sm"
     >
-      <h2 className="font-display text-2xl">Reglas de puntualidad</h2>
-      <p className="mb-4 mt-1 text-sm text-ink/60">
+      <h2 className="font-display text-2xl font-semibold">Reglas de puntualidad</h2>
+      <p className="mb-4 mt-1 text-sm text-muted">
         Un abono es puntual si se registra el día de corte o durante los días de gracia. Los regalos
         por número de marcas se configuran en{" "}
-        <Link href="/rewards" className="font-semibold text-teal hover:underline">
+        <Link href="/rewards" className="font-semibold text-brand hover:underline">
           Regalos
         </Link>
         .

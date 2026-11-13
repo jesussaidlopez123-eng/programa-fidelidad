@@ -25,17 +25,17 @@ export function RewardsTable({ rewards }: { rewards: RewardRow[] }) {
 
   if (rewards.length === 0) {
     return (
-      <p className="rounded-3xl border border-dashed border-line bg-white/60 px-5 py-10 text-center text-sm text-ink/55">
+      <p className="rounded-xl border border-dashed border-line bg-white px-5 py-10 text-center text-sm text-muted">
         No hay premios en este filtro.
       </p>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-line bg-white shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-line bg-white shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[860px] text-left text-sm">
-          <thead className="bg-cream text-ink/60">
+          <thead className="bg-midnight text-white/85">
             <tr>
               <th className="px-4 py-3 font-medium">Foto</th>
               <th className="px-4 py-3 font-medium">Cliente</th>
@@ -58,19 +58,19 @@ export function RewardsTable({ rewards }: { rewards: RewardRow[] }) {
                       className="h-14 w-14 rounded-xl object-cover ring-1 ring-line"
                     />
                   ) : (
-                    <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-cream text-[10px] uppercase tracking-wide text-ink/40 ring-1 ring-line">
+                    <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-page text-[10px] uppercase tracking-wide text-muted ring-1 ring-line">
                       Sin foto
                     </span>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   <p className="font-medium">{reward.customer.fullName}</p>
-                  <p className="font-mono text-xs text-teal">{reward.customer.barcodeId}</p>
+                  <p className="font-mono text-xs text-brand">{reward.customer.barcodeId}</p>
                 </td>
                 <td className="px-4 py-3">
                   <p>{reward.rewardName}</p>
                   {reward.marksRequired ? (
-                    <p className="text-xs text-ink/50">{reward.marksRequired} marcas</p>
+                    <p className="text-xs text-muted">{reward.marksRequired} marcas</p>
                   ) : null}
                 </td>
                 <td className="px-4 py-3 text-ink/70">{reward.credit.concept}</td>
@@ -95,7 +95,7 @@ export function RewardsTable({ rewards }: { rewards: RewardRow[] }) {
                       Marcar entregado
                     </Button>
                   ) : (
-                    <span className="text-xs text-ink/45">
+                    <span className="text-xs text-muted">
                       {reward.deliveredAt ? formatDate(reward.deliveredAt) : ""}
                     </span>
                   )}

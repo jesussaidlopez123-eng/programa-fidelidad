@@ -61,7 +61,7 @@ export function GiftTiersEditor({ initial }: { initial: Tier[] }) {
 
   return (
     <form
-      className="space-y-4 rounded-3xl border border-line bg-white p-5 shadow-sm"
+      className="space-y-4 rounded-xl border border-line bg-white p-5 shadow-sm"
       onSubmit={async (event) => {
         event.preventDefault();
         setBusy(true);
@@ -93,8 +93,8 @@ export function GiftTiersEditor({ initial }: { initial: Tier[] }) {
       }}
     >
       <div>
-        <h2 className="font-display text-2xl">Configuración de regalos</h2>
-        <p className="mt-1 text-sm text-ink/60">
+        <h2 className="font-display text-2xl font-semibold">Configuración de regalos</h2>
+        <p className="mt-1 text-sm text-muted">
           Define el nombre/descripción del premio y cuántas marcas puntuales se necesitan. Deja el
           número vacío para desactivar ese regalo. Los números activos deben ser enteros crecientes
           (por defecto 5, 10 y 15). Tras el regalo con más marcas, la racha vuelve a 0.
@@ -103,7 +103,7 @@ export function GiftTiersEditor({ initial }: { initial: Tier[] }) {
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="bg-cream text-ink/60">
+          <thead className="bg-midnight text-white/85">
             <tr>
               <th className="px-3 py-2 font-medium">Regalo</th>
               <th className="px-3 py-2 font-medium">Nombre / descripción del premio</th>

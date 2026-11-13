@@ -74,11 +74,11 @@ export function CustomerForm() {
   return (
     <div className="space-y-4">
       {created ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-teal/30 bg-teal/10 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/25 bg-brand/10 p-5">
           <div>
-            <p className="font-semibold text-forest">Cliente guardado: {created.fullName}</p>
-            <p className="font-mono text-sm text-teal">{created.barcodeId}</p>
-            <p className="mt-1 text-sm text-ink/60">Escanea la siguiente tarjeta para continuar.</p>
+            <p className="font-semibold text-brand">Cliente guardado: {created.fullName}</p>
+            <p className="font-mono text-sm text-brand">{created.barcodeId}</p>
+            <p className="mt-1 text-sm text-muted">Escanea la siguiente tarjeta para continuar.</p>
           </div>
           <Button asChild variant="outline">
             <Link href={`/print/${created.customerId}`}>Imprimir tarjeta</Link>
@@ -87,17 +87,17 @@ export function CustomerForm() {
       ) : null}
 
       <form
-        className="rounded-3xl border border-line bg-white p-6 shadow-sm"
+        className="rounded-xl border border-line bg-white p-6 shadow-sm"
         onSubmit={(event) => {
           event.preventDefault();
           void acceptCode(code);
         }}
       >
-        <label htmlFor="scan-new" className="mb-3 block font-display text-2xl text-ink">
+        <label htmlFor="scan-new" className="mb-3 block font-display text-2xl font-semibold text-ink">
           Escanear tarjeta nueva
         </label>
         <div className="relative">
-          <ScanLine className="pointer-events-none absolute left-4 top-1/2 h-7 w-7 -translate-y-1/2 text-teal" />
+          <ScanLine className="pointer-events-none absolute left-4 top-1/2 h-7 w-7 -translate-y-1/2 text-brand" />
           <Input
             id="scan-new"
             ref={scanRef}
@@ -110,7 +110,7 @@ export function CustomerForm() {
           />
         </div>
         {scanError ? (
-          <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <p role="alert" className="mt-3 rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">
             {scanError}
           </p>
         ) : null}
@@ -120,11 +120,11 @@ export function CustomerForm() {
             {checking ? "Validando…" : "Continuar"}
           </Button>
         </div>
-        <p className="mt-4 text-xs text-ink/55">
+        <p className="mt-4 text-xs text-muted">
           ¿No tienes tarjeta física con código?{" "}
           <button
             type="button"
-            className="font-semibold text-teal underline"
+            className="font-semibold text-brand underline"
             onClick={async () => {
               const result = await generateBarcode();
               setBarcodeId(result.barcodeId);
@@ -161,7 +161,7 @@ function CustomerDetailsForm({
 
   return (
     <form
-      className="grid gap-4 rounded-3xl border border-line bg-white p-6 shadow-sm md:grid-cols-2"
+      className="grid gap-4 rounded-xl border border-line bg-white p-6 shadow-sm md:grid-cols-2"
       action={async (formData) => {
         setPending(true);
         try {
@@ -194,9 +194,9 @@ function CustomerDetailsForm({
       <input type="hidden" name="barcodeId" value={barcodeId} />
       <div className="flex flex-wrap items-center justify-between gap-3 md:col-span-2">
         <div>
-          <h2 className="font-display text-2xl">Datos del cliente</h2>
-          <p className="text-sm text-ink/60">
-            Tarjeta: <span className="font-mono font-semibold text-teal">{barcodeId}</span>
+          <h2 className="font-display text-2xl font-semibold">Datos del cliente</h2>
+          <p className="text-sm text-muted">
+            Tarjeta: <span className="font-mono font-semibold text-brand">{barcodeId}</span>
           </p>
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
@@ -214,7 +214,7 @@ function CustomerDetailsForm({
           name="platform"
           required
           defaultValue=""
-          className="flex h-11 w-full rounded-xl border border-line bg-white px-3.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/40"
+          className="flex h-11 w-full rounded-xl border border-line bg-white px-3.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/35"
         >
           <option value="" disabled>
             Selecciona…

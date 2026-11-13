@@ -3,11 +3,26 @@
 @tailwind utilities;
 
 :root {
-  --cream: #f6f1e7;
-  --ink: #1c1915;
-  --forest: #14332c;
-  --teal: #1f6f5b;
-  --gold: #d4a017;
+  /* CREDICEL-inspired palette */
+  --brand: #0045a5;
+  --brand-deep: #003785;
+  --page: #f8fafd;
+  --surface: #ffffff;
+  --ink: #212529;
+  --muted: #8a92a6;
+  --midnight: #0b1120;
+  --midnight-soft: #1a2344;
+  --success: #1b7a4e;
+  --success-soft: #e8f5ee;
+  --danger: #c0392b;
+  --danger-soft: #fdecec;
+  --line: #e2e8f0;
+
+  /* Legacy aliases → CREDICEL tokens */
+  --cream: var(--page);
+  --forest: var(--brand);
+  --teal: var(--brand);
+  --gold: var(--brand);
 }
 
 html,
@@ -16,10 +31,7 @@ body {
 }
 
 body {
-  background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(212, 160, 23, 0.12), transparent 50%),
-    radial-gradient(900px 400px at 110% 0%, rgba(31, 111, 91, 0.12), transparent 45%),
-    var(--cream);
+  background: var(--page);
   color: var(--ink);
 }
 
@@ -40,7 +52,7 @@ body {
 }
 
 .confetti {
-  animation: confetti-fall 1.4s ease-in infinite;
+  animation: confetti-fall 1.4s ease-out infinite;
 }
 
 @media print {

@@ -26,8 +26,8 @@ export function StreakPips({
               "inline-flex items-center justify-center rounded-full border-2 font-bold transition",
               sizes[size],
               filled
-                ? "border-gold bg-gold text-ink shadow-[0_0_0_3px_rgba(212,160,23,0.18)]"
-                : "border-dashed border-ink/20 bg-white/40 text-ink/30",
+                ? "border-brand bg-brand text-white shadow-[0_0_0_3px_rgba(0,69,165,0.14)]"
+                : "border-dashed border-line bg-white text-muted",
             )}
           >
             {index + 1}

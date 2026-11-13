@@ -92,12 +92,12 @@ export function WinPhotoModal({
         }
       }}
     >
-      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto overflow-x-hidden bg-forest text-cream">
+      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto overflow-x-hidden bg-midnight text-white">
         <div className="pointer-events-none absolute inset-0 opacity-40">
           {Array.from({ length: 22 }).map((_, index) => (
             <span
               key={index}
-              className="absolute h-2 w-2 rounded-full bg-gold confetti"
+              className="absolute h-2 w-2 rounded-full bg-brand confetti"
               style={{
                 left: `${(index * 17) % 100}%`,
                 animationDelay: `${index * 0.08}s`,
@@ -107,19 +107,19 @@ export function WinPhotoModal({
         </div>
 
         <DialogHeader className="relative">
-          <DialogTitle className="flex flex-col items-center gap-2 text-center text-3xl text-gold sm:text-4xl">
-            <Sparkles className="h-8 w-8" />
+          <DialogTitle className="flex flex-col items-center gap-2 text-center text-3xl font-semibold text-white sm:text-4xl">
+            <Sparkles className="h-8 w-8 text-brand" />
             ¡EL CLIENTE GANÓ!
           </DialogTitle>
-          <DialogDescription className="text-center text-base text-cream/80">
-            <span className="block font-semibold text-cream">{prize?.customer}</span>
+          <DialogDescription className="text-center text-base text-white/75">
+            <span className="block font-semibold text-white">{prize?.customer}</span>
             <span className="mt-1 block">{prize?.name}</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="relative mt-4 space-y-4">
-          <div className="rounded-3xl border border-cream/15 bg-white/5 p-4">
-            <p className="mb-3 text-center text-sm text-cream/70">
+          <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+            <p className="mb-3 text-center text-sm text-white/70">
               Sube una foto del cliente con su premio (archivo o cámara). Se comprime en el navegador
               (~1000 px, ~300 KB) y se guarda en la base de datos.
             </p>
@@ -129,10 +129,10 @@ export function WinPhotoModal({
               <img
                 src={preview}
                 alt="Vista previa"
-                className="mx-auto max-h-64 w-full max-w-md rounded-2xl object-cover ring-2 ring-gold/40"
+                className="mx-auto max-h-64 w-full max-w-md rounded-xl object-cover ring-2 ring-brand/50"
               />
             ) : (
-              <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-cream/25 text-sm text-cream/50">
+              <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-white/25 text-sm text-white/50">
                 Sin vista previa
               </div>
             )}
@@ -156,7 +156,7 @@ export function WinPhotoModal({
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 border-cream/20 bg-transparent text-cream hover:bg-white/10"
+                className="flex-1 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
                 disabled={busy}
                 onClick={() => fileRef.current?.click()}
               >
@@ -166,7 +166,7 @@ export function WinPhotoModal({
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 border-cream/20 bg-transparent text-cream hover:bg-white/10"
+                className="flex-1 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
                 disabled={busy}
                 onClick={() => cameraRef.current?.click()}
               >
@@ -178,7 +178,7 @@ export function WinPhotoModal({
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button
-              variant="gold"
+              variant="default"
               className="flex-1"
               disabled={busy || !blob}
               onClick={() => void uploadNow()}
@@ -187,7 +187,7 @@ export function WinPhotoModal({
             </Button>
             <Button
               variant="outline"
-              className="flex-1 border-cream/20 bg-transparent text-cream hover:bg-white/10"
+              className="flex-1 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
               disabled={busy}
               onClick={() => {
                 toast.message("La foto quedó pendiente en Evidencias");
@@ -201,7 +201,7 @@ export function WinPhotoModal({
 
           <Button
             variant="ghost"
-            className="w-full text-cream/70 hover:bg-white/10 hover:text-cream"
+            className="w-full text-white/70 hover:bg-white/10 hover:text-white"
             disabled={busy}
             onClick={async () => {
               if (!prize) return;
