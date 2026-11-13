@@ -248,6 +248,16 @@ function CustomerDetailsForm({
         required
         placeholder="Monto de cada abono (solo registro)"
       />
+      <Field
+        label="Semanas totales"
+        name="totalWeeks"
+        type="number"
+        min="1"
+        step="1"
+        inputMode="numeric"
+        required
+        placeholder="Plazo del crédito en semanas"
+      />
       <div className="flex flex-wrap gap-3 md:col-span-2">
         <Button type="submit" size="lg" disabled={pending}>
           {pending ? "Guardando…" : "Guardar cliente"}

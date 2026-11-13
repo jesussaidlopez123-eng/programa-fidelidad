@@ -91,6 +91,8 @@ export async function createCustomerWithCredit(formData: FormData): Promise<Crea
   const imei = String(formData.get("imei") ?? "").replace(/[\s-]/g, "");
   const tagCurp = String(formData.get("tagCurp") ?? "").trim().toUpperCase();
   const installmentAmount = Number(formData.get("installmentAmount") ?? 0);
+  const totalWeeksRaw = String(formData.get("totalWeeks") ?? "").trim();
+  const totalWeeks = Number(totalWeeksRaw);
   const imeiConfirmed = formData.get("imeiConfirmed") === "1";
 
   if (!barcodeId) return { ok: false, error: "Falta el código de la tarjeta. Escanéala primero." };
@@ -108,6 +110,9 @@ export async function createCustomerWithCredit(formData: FormData): Promise<Crea
   if (!tagCurp) return { ok: false, error: "El TAG/CURP es obligatorio." };
   if (!Number.isFinite(installmentAmount) || installmentAmount <= 0) {
     return { ok: false, error: "Indica un monto de abono válido." };
+  }
+  if (!totalWeeksRaw || !Number.isInteger(totalWeeks) || totalWeeks <= 0) {
+    return { ok: false, error: "Indica las semanas totales del crédito (número entero positivo)." };
   }
 
   if (!/^\d{15}$/.test(imei) && !imeiConfirmed) {
@@ -137,6 +142,7 @@ export async function createCustomerWithCredit(formData: FormData): Promise<Crea
             balance: 0,
             installmentAmount,
             totalInstallments: 0,
+            totalWeeks,
             paidInstallments: 0,
             currentStreak: 0,
             status: "ACTIVE",

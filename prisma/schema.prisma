@@ -73,6 +73,8 @@ model Credit {
   balance           Float
   installmentAmount Float
   totalInstallments Int
+  /// Plazo del crédito en semanas (alta). Null = clientes anteriores sin dato.
+  totalWeeks        Int?
   paidInstallments  Int          @default(0)
   currentStreak     Int          @default(0)
   status            CreditStatus @default(ACTIVE)
