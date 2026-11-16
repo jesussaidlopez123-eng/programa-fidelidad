@@ -139,6 +139,8 @@ model AppSettings {
   /// Fondo activo de las siluetas (JPG/PNG) para impresión de lotes.
   cardBackgroundData     Bytes?
   cardBackgroundMimeType String?
+  /// Diseño activo: id predefinido (azul, blanco-azul, midnight, verde) o "custom".
+  cardDesignId           String?
   updatedAt  DateTime @updatedAt
 }
 

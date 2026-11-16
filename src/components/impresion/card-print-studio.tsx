@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import Barcode from "react-barcode";
-import { Download, ImagePlus, Loader2, Printer, Trash2 } from "lucide-react";
+import { Check, Download, ImagePlus, Loader2, Printer, Trash2, Upload } from "lucide-react";
 import {
   clearCardBackground,
   reserveCardPrintBatch,
@@ -14,9 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatBarcode } from "@/lib/barcode";
+import {
+  CARD_DESIGN_PRESETS,
+  CUSTOM_CARD_DESIGN_ID,
+  isCardDesignPresetId,
+  renderCardDesignDataUrl,
+  type CardDesignPresetId,
+} from "@/lib/card-designs";
 import { CARD_HEIGHT_MM, CARD_WIDTH_MM, computeCardSheetLayout } from "@/lib/card-print-layout";
 import { compressImageToJpeg, blobToBase64 } from "@/lib/image-compress";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 const MAX_QTY = 200;
 
@@ -29,6 +36,7 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
   const [backgroundPreview, setBackgroundPreview] = useState<string | null>(
     initial.backgroundUrl,
   );
+  const [designId, setDesignId] = useState<string | null>(initial.designId);
   const [pending, startTransition] = useTransition();
   const [generating, setGenerating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -51,6 +59,7 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
   const firstCode = previewCodes[0] ?? formatBarcode(Math.max(1, effectiveStart || 1));
   const pages = layout.pages;
   const totalCards = Math.min(MAX_QTY, Math.max(0, quantity || 0));
+  const isCustomSelected = designId === CUSTOM_CARD_DESIGN_ID && Boolean(backgroundPreview);
 
   useEffect(() => {
     setPreviewReady(true);
@@ -60,11 +69,37 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
     setState(next);
     setStartNumber(next.nextCardSequence);
     setBackgroundPreview(next.backgroundUrl);
+    setDesignId(next.designId);
   }
 
   async function reloadState() {
     const { getCardPrintState } = await import("@/app/actions/card-print");
     refreshFromServer(await getCardPrintState());
+  }
+
+  function onSelectPreset(presetId: CardDesignPresetId) {
+    if (pending || designId === presetId) return;
+    startTransition(async () => {
+      try {
+        const rendered = await renderCardDesignDataUrl(presetId);
+        const base64 = await blobToBase64(rendered.blob);
+        const result = await saveCardBackground({
+          base64,
+          mimeType: rendered.mimeType,
+          designId: presetId,
+        });
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+        setBackgroundPreview(rendered.dataUrl);
+        setDesignId(presetId);
+        toast.success(`Diseño «${CARD_DESIGN_PRESETS.find((p) => p.id === presetId)?.label}» activo.`);
+        await reloadState();
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "No se pudo aplicar el diseño.");
+      }
+    });
   }
 
   function onChangeBackground(file: File | null) {
@@ -80,16 +115,18 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
         const result = await saveCardBackground({
           base64,
           mimeType: compressed.mimeType,
+          designId: CUSTOM_CARD_DESIGN_ID,
         });
         if (!result.ok) {
           toast.error(result.error);
           return;
         }
         setBackgroundPreview(compressed.dataUrl);
-        toast.success("Fondo guardado.");
+        setDesignId(CUSTOM_CARD_DESIGN_ID);
+        toast.success("Mi diseño guardado.");
         await reloadState();
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "No se pudo subir el fondo.");
+        toast.error(error instanceof Error ? error.message : "No se pudo subir el diseño.");
       }
     });
   }
@@ -102,7 +139,8 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
         return;
       }
       setBackgroundPreview(null);
-      toast.success("Fondo eliminado.");
+      setDesignId(null);
+      toast.success("Diseño eliminado.");
       await reloadState();
     });
   }
@@ -226,44 +264,154 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold">Fondo / diseño</p>
-                <p className="text-xs text-muted">JPG o PNG. Se usa en cada silueta.</p>
+                <p className="text-sm font-semibold">Diseños</p>
+                <p className="text-xs text-muted">
+                  Elige un diseño CREDICEL o carga el tuyo (JPG/PNG).
+                </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              {backgroundPreview ? (
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   disabled={pending}
-                  onClick={() => fileRef.current?.click()}
+                  onClick={onClearBackground}
                 >
-                  <ImagePlus className="h-4 w-4" />
-                  Cambiar fondo
+                  <Trash2 className="h-4 w-4" />
+                  Quitar
                 </Button>
-                {backgroundPreview ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={pending}
-                    onClick={onClearBackground}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Quitar
-                  </Button>
-                ) : null}
-              </div>
+              ) : null}
             </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {CARD_DESIGN_PRESETS.map((preset) => {
+                const selected = designId === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    disabled={pending}
+                    onClick={() => onSelectPreset(preset.id)}
+                    className={cn(
+                      "group relative overflow-hidden rounded-xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+                      selected
+                        ? "border-brand ring-2 ring-brand/35"
+                        : "border-line hover:border-brand/40",
+                    )}
+                    aria-pressed={selected}
+                  >
+                    <div
+                      className="relative aspect-[85.6/53.98] w-full"
+                      style={{ background: preset.cssBackground }}
+                    >
+                      <span
+                        className="absolute left-2 top-2 text-[10px] font-bold tracking-wide"
+                        style={{ color: preset.textColor }}
+                      >
+                        CREDICEL
+                      </span>
+                      <span
+                        className="absolute bottom-0 left-0 right-0 h-1.5"
+                        style={{ background: preset.accentColor }}
+                      />
+                      {selected ? (
+                        <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white shadow-sm">
+                          <Check className="h-3 w-3" />
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="border-t border-line bg-white px-2 py-1.5">
+                      <p className="truncate text-xs font-semibold text-ink">{preset.label}</p>
+                      <p className="truncate text-[10px] text-muted">{preset.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => fileRef.current?.click()}
+                className={cn(
+                  "group relative overflow-hidden rounded-xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+                  isCustomSelected
+                    ? "border-brand ring-2 ring-brand/35"
+                    : "border-dashed border-line hover:border-brand/40",
+                )}
+                aria-pressed={isCustomSelected}
+              >
+                <div className="relative flex aspect-[85.6/53.98] w-full items-center justify-center bg-page">
+                  {isCustomSelected && backgroundPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={backgroundPreview}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 px-2 text-center text-muted">
+                      <Upload className="h-5 w-5 text-brand" />
+                      <span className="text-[10px] font-medium">JPG / PNG</span>
+                    </div>
+                  )}
+                  {isCustomSelected ? (
+                    <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white shadow-sm">
+                      <Check className="h-3 w-3" />
+                    </span>
+                  ) : null}
+                </div>
+                <div className="border-t border-line bg-white px-2 py-1.5">
+                  <p className="truncate text-xs font-semibold text-ink">Mi diseño</p>
+                  <p className="truncate text-[10px] text-muted">
+                    {isCustomSelected ? "Activo · clic para cambiar" : "Cargar desde la PC"}
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pending}
+                onClick={() => fileRef.current?.click()}
+              >
+                {pending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-4 w-4" />
+                )}
+                Cargar
+              </Button>
+              {designId && isCardDesignPresetId(designId) ? (
+                <p className="self-center text-xs text-muted">
+                  Diseño activo:{" "}
+                  <span className="font-semibold text-brand">
+                    {CARD_DESIGN_PRESETS.find((p) => p.id === designId)?.label}
+                  </span>
+                </p>
+              ) : isCustomSelected ? (
+                <p className="self-center text-xs text-muted">
+                  Diseño activo: <span className="font-semibold text-brand">Mi diseño</span>
+                </p>
+              ) : (
+                <p className="self-center text-xs text-muted">
+                  Sin diseño: silueta limpia con borde CREDICEL.
+                </p>
+              )}
+            </div>
+
             <input
               ref={fileRef}
               type="file"
               accept="image/jpeg,image/png,image/jpg"
               className="hidden"
-              onChange={(e) => onChangeBackground(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                onChangeBackground(e.target.files?.[0] ?? null);
+                e.target.value = "";
+              }}
             />
-            {!backgroundPreview ? (
-              <p className="text-xs text-muted">Sin fondo: silueta limpia con borde CREDICEL.</p>
-            ) : null}
           </div>
 
           <div className="rounded-xl border border-line bg-page px-3 py-2 text-xs text-muted">
