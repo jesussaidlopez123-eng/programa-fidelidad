@@ -26,6 +26,8 @@ export type CardPrintState = {
   hasBackground: boolean;
   backgroundMimeType: string | null;
   backgroundUrl: string | null;
+  /** Id predefinido, "custom" o null si no hay diseño/fondo. */
+  designId: string | null;
   batches: CardPrintBatchSummary[];
 };
 
@@ -72,6 +74,7 @@ export async function getCardPrintState(): Promise<CardPrintState> {
       select: {
         cardBackgroundMimeType: true,
         cardBackgroundData: true,
+        cardDesignId: true,
       },
     }),
     prisma.cardPrintBatch.findMany({
@@ -81,12 +84,16 @@ export async function getCardPrintState(): Promise<CardPrintState> {
   ]);
 
   const hasBackground = Boolean(settings?.cardBackgroundData?.length);
+  const designId =
+    settings?.cardDesignId ??
+    (hasBackground ? "custom" : null);
   return {
     nextCardSequence,
     nextCode: formatBarcode(nextCardSequence),
     hasBackground,
     backgroundMimeType: settings?.cardBackgroundMimeType ?? null,
     backgroundUrl: hasBackground ? `/api/card-background?t=${Date.now()}` : null,
+    designId,
     batches: batches.map((batch) => ({
       id: batch.id,
       fromNumber: batch.fromNumber,
@@ -197,6 +204,8 @@ export async function reserveCardPrintBatch(input: {
 export async function saveCardBackground(input: {
   base64: string;
   mimeType?: string;
+  /** Id predefinido o "custom" (imagen subida). */
+  designId?: string | null;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireUser(["ADMIN"]);
   await loadSettings();
@@ -224,11 +233,17 @@ export async function saveCardBackground(input: {
         : mime
       : "image/jpeg";
 
+  const designId =
+    typeof input.designId === "string" && input.designId.trim()
+      ? input.designId.trim().slice(0, 64)
+      : "custom";
+
   await prisma.appSettings.update({
     where: { id: "default" },
     data: {
       cardBackgroundData: buffer,
       cardBackgroundMimeType: mimeType,
+      cardDesignId: designId,
     },
   });
 
@@ -244,6 +259,7 @@ export async function clearCardBackground(): Promise<{ ok: true } | { ok: false;
     data: {
       cardBackgroundData: null,
       cardBackgroundMimeType: null,
+      cardDesignId: null,
     },
   });
   revalidatePath("/impresion-tarjetas");
