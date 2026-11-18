@@ -1,5 +1,6 @@
 import { listUsers } from "@/app/actions/users";
 import { UsersManager } from "@/components/users/users-manager";
+import { WipeOpsPanel } from "@/components/users/wipe-ops-panel";
 import { requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function UsuariosPage() {
         currentUserId={current.id}
         users={users.map((user) => ({ ...user, createdAt: user.createdAt.toISOString() }))}
       />
+      <WipeOpsPanel />
     </div>
   );
 }
