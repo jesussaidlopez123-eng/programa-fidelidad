@@ -21,11 +21,12 @@ import {
   renderCardDesignDataUrl,
   type CardDesignPresetId,
 } from "@/lib/card-designs";
+import { CARDS_PER_PDF_FILE, MAX_CARD_BATCH } from "@/lib/card-print-limits";
 import { CARD_HEIGHT_MM, CARD_WIDTH_MM, computeCardSheetLayout } from "@/lib/card-print-layout";
 import { compressImageToJpeg, blobToBase64 } from "@/lib/image-compress";
 import { cn, formatDate } from "@/lib/utils";
 
-const MAX_QTY = 200;
+const MAX_QTY = MAX_CARD_BATCH;
 
 export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
   const [state, setState] = useState(initial);
@@ -39,6 +40,7 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
   const [designId, setDesignId] = useState<string | null>(initial.designId);
   const [pending, startTransition] = useTransition();
   const [generating, setGenerating] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const effectiveStart = useCustomStart ? startNumber : state.nextCardSequence;
@@ -160,6 +162,7 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
     }
 
     setGenerating(true);
+    setGenerateProgress("Reservando códigos…");
     try {
       const reserved = await reserveCardPrintBatch({
         quantity,
@@ -170,25 +173,56 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
         return;
       }
 
-      const [{ buildCardBatchPdf }, { renderBarcodeDataUrl }] = await Promise.all([
-        import("@/lib/card-print-pdf"),
-        import("@/lib/card-barcode-canvas"),
-      ]);
-      const blob = await buildCardBatchPdf({
-        codes: reserved.codes,
-        backgroundDataUrl: backgroundPreview,
-        renderBarcode: renderBarcodeDataUrl,
-      });
+      const [{ forEachCardBatchPdfChunk, downloadBlob }, { renderBarcodeDataUrl }] =
+        await Promise.all([
+          import("@/lib/card-print-pdf"),
+          import("@/lib/card-barcode-canvas"),
+        ]);
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `tarjetas-${reserved.fromCode}-${reserved.toCode}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      let backgroundDataUrl = backgroundPreview;
+      if (backgroundDataUrl && !backgroundDataUrl.startsWith("data:")) {
+        setGenerateProgress("Cargando diseño…");
+        const res = await fetch(backgroundDataUrl, { credentials: "same-origin" });
+        if (!res.ok) throw new Error("No se pudo cargar el diseño de fondo.");
+        const blobBg = await res.blob();
+        backgroundDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error("No se pudo leer el diseño."));
+          reader.readAsDataURL(blobBg);
+        });
+      }
+
+      setGenerateProgress(`Generando PDF 0/${reserved.quantity}…`);
+      const { totalChunks } = await forEachCardBatchPdfChunk(
+        {
+          codes: reserved.codes,
+          backgroundDataUrl,
+          renderBarcode: renderBarcodeDataUrl,
+          cardsPerFile: CARDS_PER_PDF_FILE,
+          onProgress: (done, total) => {
+            setGenerateProgress(`Generando PDF ${done}/${total}…`);
+          },
+        },
+        async (chunk) => {
+          const filename =
+            chunk.totalChunks === 1
+              ? `tarjetas-${reserved.fromCode}-${reserved.toCode}.pdf`
+              : `tarjetas-${chunk.fromCode}-${chunk.toCode}-parte-${chunk.index}-de-${chunk.totalChunks}.pdf`;
+          setGenerateProgress(
+            chunk.totalChunks === 1
+              ? "Descargando PDF…"
+              : `Descargando parte ${chunk.index} de ${chunk.totalChunks}…`,
+          );
+          // Pequeña pausa entre descargas para que el navegador no bloquee archivos.
+          await downloadBlob(chunk.blob, filename, chunk.index === 1 ? 0 : 450);
+        },
+      );
 
       toast.success(
-        `PDF listo: ${reserved.quantity} tarjetas (${reserved.fromCode} → ${reserved.toCode}).`,
+        totalChunks === 1
+          ? `PDF listo: ${reserved.quantity} tarjetas (${reserved.fromCode} → ${reserved.toCode}).`
+          : `Listo: ${reserved.quantity} tarjetas en ${totalChunks} PDFs (${reserved.fromCode} → ${reserved.toCode}).`,
       );
       await reloadState();
       setUseCustomStart(false);
@@ -196,6 +230,7 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
       toast.error(error instanceof Error ? error.message : "No se pudo generar el PDF.");
     } finally {
       setGenerating(false);
+      setGenerateProgress(null);
     }
   }
 
@@ -431,11 +466,18 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
             ) : (
               <Download className="h-4 w-4" />
             )}
-            Generar PDF
+            {generating ? "Generando…" : "Generar PDF"}
           </Button>
-          <p className="text-center text-xs text-muted">
-            El PDF solo se descarga después de ver la vista previa.
-          </p>
+          {generateProgress ? (
+            <p className="text-center text-xs font-medium text-brand" aria-live="polite">
+              {generateProgress}
+            </p>
+          ) : (
+            <p className="text-center text-xs text-muted">
+              Lotes grandes (más de {CARDS_PER_PDF_FILE}) se descargan en varios PDFs de hasta{" "}
+              {CARDS_PER_PDF_FILE} tarjetas. El PDF solo se descarga después de ver la vista previa.
+            </p>
+          )}
         </div>
 
         <div className="space-y-4 rounded-xl border border-line bg-white p-5">
