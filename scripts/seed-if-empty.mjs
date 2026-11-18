@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 
-// Crea los usuarios iniciales que falten y, si no hay clientes, los datos de demostración.
+// Asegura usuarios iniciales + GiftTier. Los clientes demo solo si DEMO_SEED=1.
 // Si falla, el build continúa.
 const result = spawnSync("npx", ["tsx", "prisma/seed.ts"], {
   stdio: "inherit",
@@ -10,7 +10,7 @@ const result = spawnSync("npx", ["tsx", "prisma/seed.ts"], {
 
 if (result.status !== 0) {
   console.warn(
-    "[seed] No se pudo ejecutar el seed (usuarios iniciales / datos de demostración) (se ignora, el build continúa). " +
+    "[seed] No se pudo ejecutar el seed (usuarios iniciales) (se ignora, el build continúa). " +
       "Vuelve a hacer Redeploy cuando la base responda para crear los usuarios iniciales.",
   );
 }

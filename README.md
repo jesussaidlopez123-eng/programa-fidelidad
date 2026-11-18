@@ -36,7 +36,7 @@ La primera vez que se despliega (y en cada build) el seed crea los usuarios que 
 - La sesión es una cookie firmada `httpOnly` que dura 12 horas. **No necesitas variables nuevas**: la firma se deriva de `DATABASE_URL`/`DIRECT_URL`. Opcionalmente define `AUTH_SECRET` (mínimo 16 caracteres) en Vercel para usar tu propio secreto; cambiarlo (o cambiar las URLs de la base) cierra todas las sesiones.
 - Las contraseñas se guardan con `bcryptjs`. Si olvidas la contraseña de todos los administradores, edita la tabla `User` en Supabase o borra un administrador y haz Redeploy para que el seed lo recree con `0000`.
 
-En la demo, el cliente en racha 4 es **María Elena Vargas · `CRD-000123`**: el siguiente abono puntual desbloquea el Regalo 1 (solo se crea si la base está vacía).
+Por defecto el seed **no** crea clientes de ejemplo (go-live). Para datos demo locales: `DEMO_SEED=1 npx prisma db seed` (incluye a **María Elena Vargas · `CRD-000123`** en racha 4).
 
 ## Regalos (administrador)
 
@@ -159,7 +159,7 @@ npm run dev
 
 El servidor local queda en `http://127.0.0.1:3000`.
 
-`prisma migrate deploy` aplica las migraciones de `prisma/migrations` (usa `DIRECT_URL`). Es seguro repetirlo; no borra datos. El seed crea usuarios iniciales, los tres `GiftTier` y, si la base no tiene clientes, 5 clientes de demostración (uno con `currentStreak: 4`).
+`prisma migrate deploy` aplica las migraciones de `prisma/migrations` (usa `DIRECT_URL`). Es seguro repetirlo; no borra datos. El seed crea usuarios iniciales y los tres `GiftTier`. Los clientes demo solo aparecen con `DEMO_SEED=1`.
 
 ## 3. Desplegar en Vercel (sin comandos locales)
 
@@ -177,10 +177,31 @@ Durante el build, `npm run build` ejecuta en este orden:
 1. Verifica que existan `DATABASE_URL` y `DIRECT_URL`. Si falta alguna, o si `DIRECT_URL` usa el puerto 6543 / `pgbouncer=true`, el build **falla con un mensaje en español**.
 2. `prisma generate`.
 3. `prisma migrate deploy` (con límite de 120 s): crea o actualiza las tablas usando `DIRECT_URL`. Es seguro repetirlo; no borra datos.
-4. Seed **idempotente** (usuarios y GiftTier; clientes demo solo si la base está vacía). Si falla no rompe el build.
+4. Seed **idempotente** (usuarios y GiftTier; **sin** clientes demo salvo `DEMO_SEED=1`). Si falla no rompe el build.
 5. `next build`.
 
 Para desarrollo local sin tocar la base: `npm run build:local`.
+
+## Limpiar datos de ejemplo (go-live)
+
+Script one-shot que deja la operación en cero **sin tocar usuarios ni secretos**:
+
+| Se borra | Se conserva |
+| --- | --- |
+| Clientes, créditos, abonos, premios/evidencias | Usuarios (`ADMINISTRADOR`, sucursales, …) y contraseñas |
+| Lotes de impresión (`CardPrintBatch`) | `GiftTier` (configuración de regalos) |
+| Fondo/diseño subido en BD + `nextCardSequence` → 1 | Ciclo/gracia en `AppSettings` |
+| | Presets CREDICEL en la UI (código, no filas de BD) |
+
+```bash
+# 1) Dry-run (solo conteos):
+npm run db:wipe-ops
+
+# 2) Ejecutar (local o contra Production con DATABASE_URL exportada):
+npm run db:wipe-ops:yes
+```
+
+**Producción (Said):** copia `DATABASE_URL` de Vercel/Supabase a tu `.env` local (o `export DATABASE_URL=...`), corre `npm run db:wipe-ops` para revisar conteos, luego `npm run db:wipe-ops:yes`. Verifica login con `ADMINISTRADOR`. Un Redeploy posterior **no** vuelve a crear clientes demo.
 
 ## Pruebas E2E (Playwright + Postgres local)
 
@@ -216,6 +237,8 @@ Casi siempre es la base de datos, no el código. Las migraciones se aplican sola
 | `npm run build` | Verifica variables, `prisma generate`, `prisma migrate deploy`, seed y `next build` (lo usa Vercel) |
 | `npm run build:local` | `prisma generate` + `next build` (sin tocar la base) |
 | `npm run db:setup` | `prisma migrate deploy` y seed |
+| `npm run db:wipe-ops` | Dry-run: cuenta datos operativos a borrar (go-live) |
+| `npm run db:wipe-ops:yes` | Borra clientes/abonos/premios/lotes; conserva usuarios |
 | `npm run test:e2e` | Playwright contra la app en `127.0.0.1:3000` y Postgres local |
 
 ## Flujo de fidelidad
