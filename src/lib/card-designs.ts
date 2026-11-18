@@ -106,18 +106,12 @@ export async function renderCardDesignDataUrl(
   ctx.fillStyle = `rgba(${accent.r},${accent.g},${accent.b},0.92)`;
   ctx.fillRect(0, CANVAS_H - 36, CANVAS_W, 36);
 
-  // Marca CREDICEL (esquina superior izquierda). El logo PNG va arriba-derecha en el PDF.
+  // Marca CREDICEL (izquierda). Logo PNG va arriba-derecha en el PDF;
+  // sin subtítulo ni sello tipográfico debajo/en esa zona.
   ctx.fillStyle = preset.textColor;
   ctx.font = "700 54px Arial, Helvetica, sans-serif";
   ctx.textBaseline = "top";
   ctx.fillText("CREDICEL", 48, 40);
-
-  // Diseño 1 (azul): sin la palabra "fidelidad".
-  const subtitle = designId === "azul" ? "Programa" : "Programa de fidelidad";
-  ctx.font = "500 22px Arial, Helvetica, sans-serif";
-  ctx.globalAlpha = 0.85;
-  ctx.fillText(subtitle, 50, 108);
-  ctx.globalAlpha = 1;
 
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(

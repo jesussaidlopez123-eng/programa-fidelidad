@@ -181,7 +181,7 @@ async function buildOnePdfDocument(
 
     drawCardFrame(doc, x, y, layout, hasBackground);
 
-    // Logo CREDICEL pequeño arriba-derecha (fondo transparente).
+    // Logo CREDICEL pequeño arriba-derecha (fondo transparente). Sin elementos debajo.
     if (logoDataUrl) {
       const logoX = x + layout.cardWidth - CREDICEL_LOGO_WIDTH_MM - CREDICEL_LOGO_MARGIN_MM;
       const logoY = y + CREDICEL_LOGO_MARGIN_MM;

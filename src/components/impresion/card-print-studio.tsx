@@ -68,6 +68,8 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
     setPreviewReady(true);
   }, [previewCodes, backgroundPreview]);
 
+  const presetRefreshDone = useRef(false);
+
   function refreshFromServer(next: CardPrintState) {
     setState(next);
     setStartNumber(next.nextCardSequence);
@@ -80,25 +82,48 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
     refreshFromServer(await getCardPrintState());
   }
 
-  function onSelectPreset(presetId: CardDesignPresetId) {
-    if (pending || designId === presetId) return;
+  async function applyPreset(presetId: CardDesignPresetId, opts?: { quiet?: boolean }) {
+    const rendered = await renderCardDesignDataUrl(presetId);
+    const base64 = await blobToBase64(rendered.blob);
+    const result = await saveCardBackground({
+      base64,
+      mimeType: rendered.mimeType,
+      designId: presetId,
+    });
+    if (!result.ok) {
+      if (!opts?.quiet) toast.error(result.error);
+      return false;
+    }
+    setBackgroundPreview(rendered.dataUrl);
+    setDesignId(presetId);
+    if (!opts?.quiet) {
+      toast.success(`Diseño «${CARD_DESIGN_PRESETS.find((p) => p.id === presetId)?.label}» activo.`);
+    }
+    await reloadState();
+    return true;
+  }
+
+  // Regenera el JPEG del preset activo (quita subtítulo/sello viejos bajo el logo).
+  useEffect(() => {
+    if (presetRefreshDone.current) return;
+    if (!isCardDesignPresetId(initial.designId)) return;
+    presetRefreshDone.current = true;
+    const presetId = initial.designId;
     startTransition(async () => {
       try {
-        const rendered = await renderCardDesignDataUrl(presetId);
-        const base64 = await blobToBase64(rendered.blob);
-        const result = await saveCardBackground({
-          base64,
-          mimeType: rendered.mimeType,
-          designId: presetId,
-        });
-        if (!result.ok) {
-          toast.error(result.error);
-          return;
-        }
-        setBackgroundPreview(rendered.dataUrl);
-        setDesignId(presetId);
-        toast.success(`Diseño «${CARD_DESIGN_PRESETS.find((p) => p.id === presetId)?.label}» activo.`);
-        await reloadState();
+        await applyPreset(presetId, { quiet: true });
+      } catch {
+        // Silencioso: el fondo guardado sigue usable.
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar con preset guardado
+  }, []);
+
+  function onSelectPreset(presetId: CardDesignPresetId) {
+    if (pending) return;
+    startTransition(async () => {
+      try {
+        await applyPreset(presetId);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "No se pudo aplicar el diseño.");
       }
