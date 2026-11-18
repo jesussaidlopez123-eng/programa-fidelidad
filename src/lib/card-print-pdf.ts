@@ -6,14 +6,30 @@ import {
   computeCardSheetLayout,
   type CardSheetLayout,
 } from "@/lib/card-print-layout";
+import { CARDS_PER_PDF_FILE } from "@/lib/card-print-limits";
 
 export type CardPdfOptions = {
   codes: string[];
   /** Data URL (image/jpeg|png) del fondo, o null para silueta limpia. */
   backgroundDataUrl?: string | null;
-  /** Genera canvas de Code 128 (PNG data URL). */
+  /** Genera canvas de Code 128 (data URL). */
   renderBarcode: (code: string) => Promise<string>;
+  /** Progreso 0…codes.length (opcional). */
+  onProgress?: (done: number, total: number) => void;
+  /** Tarjetas por archivo PDF (por defecto CARDS_PER_PDF_FILE). */
+  cardsPerFile?: number;
 };
+
+export type CardPdfChunk = {
+  blob: Blob;
+  fromCode: string;
+  toCode: string;
+  index: number;
+  totalChunks: number;
+  quantity: number;
+};
+
+const BACKGROUND_ALIAS = "card-bg";
 
 function drawCardFrame(
   doc: jsPDF,
@@ -34,30 +50,116 @@ function drawCardFrame(
   }
 }
 
+function yieldToUi() {
+  return new Promise<void>((resolve) => {
+    if (typeof setTimeout === "function") {
+      setTimeout(resolve, 0);
+    } else {
+      resolve();
+    }
+  });
+}
+
+function imageFormatFromDataUrl(dataUrl: string): "PNG" | "JPEG" {
+  return dataUrl.includes("image/png") ? "PNG" : "JPEG";
+}
+
 /**
- * Genera un PDF A4 con siluetas ID-1 y códigos Code 128 (CRD-######).
+ * Genera un único PDF A4 con siluetas ID-1 y códigos Code 128 (CRD-######).
+ * Para lotes grandes preferir `forEachCardBatchPdfChunk` (varios archivos).
  * Pensado para el navegador; `renderBarcode` inyecta bwip-js u otro motor.
  */
 export async function buildCardBatchPdf(options: CardPdfOptions): Promise<Blob> {
-  const { codes, backgroundDataUrl, renderBarcode } = options;
+  if (!options.codes.length) throw new Error("No hay códigos para imprimir.");
+  return buildOnePdfDocument(options.codes, options);
+}
+
+/**
+ * Genera y entrega cada PDF del lote de inmediato (no acumula Blobs en memoria).
+ * Un lote de 2000 con cardsPerFile=200 → 10 archivos.
+ */
+export async function forEachCardBatchPdfChunk(
+  options: CardPdfOptions,
+  onChunk: (chunk: CardPdfChunk) => void | Promise<void>,
+): Promise<{ totalChunks: number; quantity: number }> {
+  const { codes } = options;
   if (!codes.length) throw new Error("No hay códigos para imprimir.");
 
+  const perFile = Math.max(1, options.cardsPerFile ?? CARDS_PER_PDF_FILE);
+  const totalChunks = Math.ceil(codes.length / perFile);
+  let doneGlobal = 0;
+
+  for (let c = 0; c < totalChunks; c += 1) {
+    const slice = codes.slice(c * perFile, (c + 1) * perFile);
+    const blob = await buildOnePdfDocument(slice, {
+      ...options,
+      onProgress: (doneInChunk) => {
+        options.onProgress?.(doneGlobal + doneInChunk, codes.length);
+      },
+    });
+    doneGlobal += slice.length;
+    options.onProgress?.(doneGlobal, codes.length);
+
+    await onChunk({
+      blob,
+      fromCode: slice[0],
+      toCode: slice[slice.length - 1],
+      index: c + 1,
+      totalChunks,
+      quantity: slice.length,
+    });
+
+    await yieldToUi();
+  }
+
+  return { totalChunks, quantity: codes.length };
+}
+
+/** @deprecated Preferir forEachCardBatchPdfChunk para lotes grandes. */
+export async function buildCardBatchPdfChunks(
+  options: CardPdfOptions,
+): Promise<CardPdfChunk[]> {
+  const chunks: CardPdfChunk[] = [];
+  await forEachCardBatchPdfChunk(options, (chunk) => {
+    chunks.push(chunk);
+  });
+  return chunks;
+}
+
+async function buildOnePdfDocument(
+  codes: string[],
+  options: Omit<CardPdfOptions, "codes" | "cardsPerFile">,
+): Promise<Blob> {
+  const { backgroundDataUrl, renderBarcode, onProgress } = options;
   const layout = computeCardSheetLayout(codes.length);
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const hasBackground = Boolean(backgroundDataUrl);
+  const bgFormat = backgroundDataUrl
+    ? imageFormatFromDataUrl(backgroundDataUrl)
+    : "JPEG";
 
   for (let i = 0; i < codes.length; i += 1) {
     if (i > 0 && i % layout.perPage === 0) {
       doc.addPage();
+      // Ceder el hilo entre hojas para no congelar la UI en lotes grandes.
+      await yieldToUi();
     }
     const indexOnPage = i % layout.perPage;
     const { x, y } = cardPosition(layout, indexOnPage);
     const code = codes[i];
 
     if (hasBackground && backgroundDataUrl) {
-      const format = backgroundDataUrl.includes("image/png") ? "PNG" : "JPEG";
       try {
-        doc.addImage(backgroundDataUrl, format, x, y, layout.cardWidth, layout.cardHeight);
+        doc.addImage(
+          backgroundDataUrl,
+          bgFormat,
+          x,
+          y,
+          layout.cardWidth,
+          layout.cardHeight,
+          BACKGROUND_ALIAS,
+          "FAST",
+        );
       } catch {
         // Si el fondo falla, sigue con marco vacío.
       }
@@ -66,6 +168,7 @@ export async function buildCardBatchPdf(options: CardPdfOptions): Promise<Blob> 
     drawCardFrame(doc, x, y, layout, hasBackground);
 
     const barcodeDataUrl = await renderBarcode(code);
+    const barcodeFormat = imageFormatFromDataUrl(barcodeDataUrl);
     const barcodeW = layout.cardWidth * 0.78;
     const barcodeH = 14;
     const barcodeX = x + (layout.cardWidth - barcodeW) / 2;
@@ -75,7 +178,7 @@ export async function buildCardBatchPdf(options: CardPdfOptions): Promise<Blob> 
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(barcodeX - 2, barcodeY - 2, barcodeW + 4, barcodeH + 10, 1.2, 1.2, "F");
 
-    doc.addImage(barcodeDataUrl, "PNG", barcodeX, barcodeY, barcodeW, barcodeH);
+    doc.addImage(barcodeDataUrl, barcodeFormat, barcodeX, barcodeY, barcodeW, barcodeH);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
@@ -83,6 +186,8 @@ export async function buildCardBatchPdf(options: CardPdfOptions): Promise<Blob> 
     doc.text(code, x + layout.cardWidth / 2, barcodeY + barcodeH + 5, {
       align: "center",
     });
+
+    onProgress?.(i + 1, codes.length);
   }
 
   return doc.output("blob");
@@ -94,4 +199,25 @@ export function suggestLayoutSummary(quantity: number) {
     ...layout,
     cardLabel: `${CARD_WIDTH_MM}×${CARD_HEIGHT_MM} mm (ISO/IEC 7810 ID-1)`,
   };
+}
+
+/** Descarga un Blob; retorna una promesa que espera un breve delay (multi-file). */
+export function downloadBlob(blob: Blob, filename: string, delayMs = 0): Promise<void> {
+  return new Promise((resolve) => {
+    const run = () => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Revocar tras un instante para que el navegador alcance a iniciar la descarga.
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      resolve();
+    };
+    if (delayMs > 0) setTimeout(run, delayMs);
+    else run();
+  });
 }

@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/session";
 import { barcodeRange, formatBarcode, parseBarcodeSequence } from "@/lib/barcode";
+import { MAX_CARD_BATCH } from "@/lib/card-print-limits";
 import { loadSettings } from "@/lib/settings";
 
-const MAX_BATCH = 200;
+const MAX_BATCH = MAX_CARD_BATCH;
 const MAX_BACKGROUND_BYTES = 900 * 1024;
 
 export type CardPrintBatchSummary = {

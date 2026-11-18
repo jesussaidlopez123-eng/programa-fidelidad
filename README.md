@@ -91,18 +91,20 @@ Las altas nuevas no cierran el crédito por número de abonos (`totalInstallment
 
 Menú **Impresión de tarjetas** (última opción, ruta `/impresion-tarjetas`, solo ADMIN).
 
-1. **Configurar lote**: cantidad (1–200) y número inicial opcional, o continuar desde el último lote (`AppSettings.nextCardSequence`).
-2. **Cambiar fondo**: sube JPG/PNG desde la PC; se guarda en Postgres (`AppSettings.cardBackgroundData`, bytea). Sin fondo = silueta limpia con borde.
+1. **Configurar lote**: cantidad (1–2000) y número inicial opcional, o continuar desde el último lote (`AppSettings.nextCardSequence`).
+2. **Diseños**: elige un preset CREDICEL o sube JPG/PNG; se guarda en Postgres (`AppSettings.cardBackgroundData`, bytea). Sin fondo = silueta limpia con borde.
 3. **Vista previa** en pantalla (primera hoja + tarjeta grande) con Code 128 y el texto `CRD-######`.
-4. **Generar PDF**: descarga un PDF A4 con siluetas ISO/IEC 7810 ID-1 (≈ 85.6×53.98 mm), varias por hoja, listo para papel calcomanía. Los códigos se reservan en historial (`CardPrintBatch`) **sin crear clientes**; se asignan al escanearlos en **Alta**.
+4. **Generar PDF**: descarga PDF(s) A4 con siluetas ISO/IEC 7810 ID-1 (≈ 85.6×53.98 mm), varias por hoja, listo para papel calcomanía. Lotes grandes se parten en varios archivos de hasta **200 tarjetas** cada uno (p. ej. 2000 → 10 PDFs) para evitar fallos de memoria/tiempo en el navegador. Los códigos se reservan en historial (`CardPrintBatch`) **sin crear clientes**; se asignan al escanearlos en **Alta**.
 
 Prueba local del motor PDF (sin base de datos):
 
 ```bash
 node scripts/test-card-pdf.mjs
+# Lote grande (chunked, 2000 tarjetas):
+node scripts/test-card-pdf.mjs 2000
 ```
 
-Genera `tmp/tarjetas-prueba.pdf`.
+Genera `tmp/tarjetas-prueba.pdf` (o varias partes `tmp/tarjetas-lote-*-parte-*.pdf`).
 
 ## Stack
 
