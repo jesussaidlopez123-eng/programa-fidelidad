@@ -48,26 +48,28 @@ async function ensureGiftTiers() {
   console.log("[seed] GiftTier 1/2/3 asegurados (5, 10, 15 marcas).");
 }
 
-async function main() {
-  await ensureUsers();
+function daysAgo(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date;
+}
 
-  await prisma.appSettings.upsert({
-    where: { id: "default" },
-    update: {},
-    create: {
-      id: "default",
-      cycleDays: 7,
-      graceDays: 2,
-      rewardEvery: 5,
-      rewardName: "Regalo 1",
-    },
-  });
-
-  await ensureGiftTiers();
+/**
+ * Clientes de demostración (opcional).
+ * Solo si DEMO_SEED=1 — nunca en Production go-live (el wipe deja la base vacía
+ * y un redeploy no debe volver a llenarla de ejemplos).
+ */
+async function seedDemoCustomersIfRequested() {
+  if (process.env.DEMO_SEED !== "1") {
+    console.log(
+      "[seed] Sin clientes demo (go-live). Para datos de ejemplo locales: DEMO_SEED=1 npx prisma db seed",
+    );
+    return;
+  }
 
   const existingCustomers = await prisma.customer.count();
   if (existingCustomers > 0) {
-    console.log(`[seed] La base ya tiene ${existingCustomers} cliente(s); no se agrega nada.`);
+    console.log(`[seed] La base ya tiene ${existingCustomers} cliente(s); no se agrega demo.`);
     return;
   }
 
@@ -250,13 +252,28 @@ async function main() {
     },
   });
 
-  console.log("Seed listo. Cliente en racha 4: María Elena Vargas · CRD-000123 (siguiente puntual = Regalo 1)");
+  console.log(
+    "[seed] DEMO_SEED=1: clientes demo listos. María Elena Vargas · CRD-000123 (racha 4).",
+  );
 }
 
-function daysAgo(days: number) {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return date;
+async function main() {
+  await ensureUsers();
+
+  await prisma.appSettings.upsert({
+    where: { id: "default" },
+    update: {},
+    create: {
+      id: "default",
+      cycleDays: 7,
+      graceDays: 2,
+      rewardEvery: 5,
+      rewardName: "Regalo 1",
+    },
+  });
+
+  await ensureGiftTiers();
+  await seedDemoCustomersIfRequested();
 }
 
 main()
