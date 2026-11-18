@@ -23,6 +23,7 @@ import {
 } from "@/lib/card-designs";
 import { CARDS_PER_PDF_FILE, MAX_CARD_BATCH } from "@/lib/card-print-limits";
 import { CARD_HEIGHT_MM, CARD_WIDTH_MM, computeCardSheetLayout } from "@/lib/card-print-layout";
+import { CREDICEL_LOGO_SRC } from "@/lib/credicel-logo";
 import { compressImageToJpeg, blobToBase64 } from "@/lib/image-compress";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -345,12 +346,18 @@ export function CardPrintStudio({ initial }: { initial: CardPrintState }) {
                       >
                         CREDICEL
                       </span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={CREDICEL_LOGO_SRC}
+                        alt=""
+                        className="absolute right-1.5 top-1.5 h-4 w-auto object-contain opacity-95"
+                      />
                       <span
                         className="absolute bottom-0 left-0 right-0 h-1.5"
                         style={{ background: preset.accentColor }}
                       />
                       {selected ? (
-                        <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white shadow-sm">
+                        <span className="absolute bottom-2 right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white shadow-sm">
                           <Check className="h-3 w-3" />
                         </span>
                       ) : null}
@@ -593,6 +600,17 @@ function PreviewCard({
           background="transparent"
         />
       </div>
+      {/* Logo CREDICEL arriba-derecha (mismo lugar que en el PDF). */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={CREDICEL_LOGO_SRC}
+        alt=""
+        className={
+          large
+            ? "pointer-events-none absolute right-2.5 top-2.5 z-10 h-8 w-auto object-contain drop-shadow-sm"
+            : "pointer-events-none absolute right-1.5 top-1.5 z-10 h-5 w-auto object-contain drop-shadow-sm"
+        }
+      />
     </div>
   );
 }

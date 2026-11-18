@@ -7,11 +7,20 @@ import {
   type CardSheetLayout,
 } from "@/lib/card-print-layout";
 import { CARDS_PER_PDF_FILE } from "@/lib/card-print-limits";
+import {
+  CREDICEL_LOGO_HEIGHT_MM,
+  CREDICEL_LOGO_MARGIN_MM,
+  CREDICEL_LOGO_PDF_ALIAS,
+  CREDICEL_LOGO_WIDTH_MM,
+  loadCredicelLogoDataUrl,
+} from "@/lib/credicel-logo";
 
 export type CardPdfOptions = {
   codes: string[];
   /** Data URL (image/jpeg|png) del fondo, o null para silueta limpia. */
   backgroundDataUrl?: string | null;
+  /** Data URL PNG del logo CREDICEL (si se omite, se carga desde /credicel-logo-card.png). */
+  logoDataUrl?: string | null;
   /** Genera canvas de Code 128 (data URL). */
   renderBarcode: (code: string) => Promise<string>;
   /** Progreso 0…codes.length (opcional). */
@@ -138,6 +147,11 @@ async function buildOnePdfDocument(
     ? imageFormatFromDataUrl(backgroundDataUrl)
     : "JPEG";
 
+  const logoDataUrl =
+    options.logoDataUrl === null
+      ? null
+      : options.logoDataUrl ?? (await loadCredicelLogoDataUrl());
+
   for (let i = 0; i < codes.length; i += 1) {
     if (i > 0 && i % layout.perPage === 0) {
       doc.addPage();
@@ -166,6 +180,26 @@ async function buildOnePdfDocument(
     }
 
     drawCardFrame(doc, x, y, layout, hasBackground);
+
+    // Logo CREDICEL pequeño arriba-derecha (fondo transparente).
+    if (logoDataUrl) {
+      const logoX = x + layout.cardWidth - CREDICEL_LOGO_WIDTH_MM - CREDICEL_LOGO_MARGIN_MM;
+      const logoY = y + CREDICEL_LOGO_MARGIN_MM;
+      try {
+        doc.addImage(
+          logoDataUrl,
+          "PNG",
+          logoX,
+          logoY,
+          CREDICEL_LOGO_WIDTH_MM,
+          CREDICEL_LOGO_HEIGHT_MM,
+          CREDICEL_LOGO_PDF_ALIAS,
+          "FAST",
+        );
+      } catch {
+        // Si el logo falla, la tarjeta sigue imprimible.
+      }
+    }
 
     const barcodeDataUrl = await renderBarcode(code);
     const barcodeFormat = imageFormatFromDataUrl(barcodeDataUrl);
