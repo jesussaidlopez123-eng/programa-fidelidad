@@ -81,7 +81,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 
 /**
  * Renderiza un diseño predefinido a data URL JPEG (navegador).
- * Aspecto ID-1 (~85.6×54 mm). Incluye logo-texto CREDICEL.
+ * Aspecto ID-1 (~85.6×54 mm). Incluye texto CREDICEL; el PNG va en el PDF.
  */
 export async function renderCardDesignDataUrl(
   designId: CardDesignPresetId,
@@ -106,31 +106,18 @@ export async function renderCardDesignDataUrl(
   ctx.fillStyle = `rgba(${accent.r},${accent.g},${accent.b},0.92)`;
   ctx.fillRect(0, CANVAS_H - 36, CANVAS_W, 36);
 
-  // Marca CREDICEL (esquina superior)
+  // Marca CREDICEL (esquina superior izquierda). El logo PNG va arriba-derecha en el PDF.
   ctx.fillStyle = preset.textColor;
   ctx.font = "700 54px Arial, Helvetica, sans-serif";
   ctx.textBaseline = "top";
   ctx.fillText("CREDICEL", 48, 40);
 
+  // Diseño 1 (azul): sin la palabra "fidelidad".
+  const subtitle = designId === "azul" ? "Programa" : "Programa de fidelidad";
   ctx.font = "500 22px Arial, Helvetica, sans-serif";
   ctx.globalAlpha = 0.85;
-  ctx.fillText("Programa de fidelidad", 50, 108);
+  ctx.fillText(subtitle, 50, 108);
   ctx.globalAlpha = 1;
-
-  // Sello circular sutil (logo tipográfico)
-  ctx.beginPath();
-  ctx.arc(CANVAS_W - 90, 90, 48, 0, Math.PI * 2);
-  ctx.strokeStyle = preset.textColor;
-  ctx.lineWidth = 3;
-  ctx.globalAlpha = 0.55;
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-  ctx.font = "700 16px Arial, Helvetica, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = preset.textColor;
-  ctx.fillText("CRD", CANVAS_W - 90, 90);
-  ctx.textAlign = "left";
 
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
